@@ -89,13 +89,14 @@ let integer target position =
         , target
         , p )
 
+let write_header f = 
+  List.iter
+      (fun hex -> output_byte f @@ int_of_string @@ "0x" ^ hex)
+      ["00"; "61"; "73"; "6d"; "01"; "00"; "00"; "00"]
+
 let () =
   let
     f = open_out "out.wasm"
   in
-    (output_byte f @@ int_of_string "0x00";
-    output_byte f @@ int_of_string "0x61";
-    output_byte f @@ int_of_string "0x73";
-    output_byte f @@ int_of_string "0x6d";
-    output_byte f @@ int_of_string "0x01";
-    close_out f)
+    write_header f;
+    close_out f
