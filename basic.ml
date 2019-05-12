@@ -88,15 +88,77 @@ let integer target position =
                   "" ast_list ) ]
         , target
         , p )
+(*
+let write f num size = output_byte f @@ int_of_string @@ "0x" ^ Printf.sprintf "%X" num
+*)
 
-let write_header f = 
-  List.iter
-      (fun hex -> output_byte f @@ int_of_string @@ "0x" ^ hex)
-      ["00"; "61"; "73"; "6d"; "01"; "00"; "00"; "00"]
+let write_hexs f hexs = List.iter (fun hex -> output_byte f  @@ int_of_string @@ "0x" ^ hex) hexs
+
+let write_header f =
+  write_hexs f [
+    "00"; "61"; "73"; "6d"; (* WASM_BINARY_MAGIC *)
+    "01"; "00"; "00"; "00"; (* WASM_BINARY_VERSION *)
+  ]
+
+let write_type_header f =
+  write_hexs f [
+    "01"; (* section code *)
+    "05"; (* section size *)
+    "01"; (* num types *)
+  ]
+
+  let write_type f =
+    write_hexs f [
+      "60"; (* func *)
+      "00"; (* num params *)
+      "01"; (* num results *)
+      "7f"; (* i32 *)
+    ]
+
+  let write_function_header f =
+    write_hexs f [
+      "03"; (* section code *)
+      "02"; (* section size *)
+      "01"; (* num functions *)
+      "00"; (* function 0 signature index *)
+    ]
+
+  let write_export f =
+    write_hexs f [
+      "07"; (* section code *)
+      "08"; (* section size *)
+      "01"; (* num exports *)
+      "04"; (* string length *)
+      "6d"; "61"; "69"; "6e"; (* main ; export name *)
+      "00"; (* export kind *)
+      "00"; (* export func index *)
+    ]
+
+  let write_code_header f =
+    write_hexs f [
+      "0a"; (* section code *)
+      "06"; (* section size *)
+      "01"; (* num functions *)
+    ]
+
+  let write_code f =
+    write_hexs f [
+      "04"; (* func body size *)
+      "00"; (* local decl count *)
+      "41"; (* i32.const *)
+      "2a"; (* i32 literal *)
+      "0b"; (* end *)
+    ]
 
 let () =
   let
-    f = open_out "out.wasm"
+    out = open_out "out.wasm"
   in
-    write_header f;
-    close_out f
+    write_header out;
+    write_type_header out;
+    write_type out;
+    write_function_header out;
+    write_export out;
+    write_code_header out;
+    write_code out;
+    close_out out
