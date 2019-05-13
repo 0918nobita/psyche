@@ -88,9 +88,22 @@ let integer target position =
                   "" ast_list ) ]
         , target
         , p )
-(*
-let write f num size = output_byte f @@ int_of_string @@ "0x" ^ Printf.sprintf "%X" num
-*)
+
+let rec split size str =
+  if size < 1
+    then
+      failwith "(split) Invalid size"
+    else
+      match str with
+        | "" -> []
+        | s ->
+          let len = String.length s in
+            if len >= size
+              then
+                String.sub s (len - size) size
+                :: (split size @@ String.sub s 0 (len - size))
+              else
+                failwith "(split) Invalid format"
 
 let write_hexs f hexs = List.iter (fun hex -> output_byte f  @@ int_of_string @@ "0x" ^ hex) hexs
 
