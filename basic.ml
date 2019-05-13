@@ -105,6 +105,8 @@ let rec split size str =
               else
                 failwith "(split) Invalid format"
 
+let make_list n len = Array.to_list @@ Array.make n len
+
 let write_hexs f hexs = List.iter (fun hex -> output_byte f  @@ int_of_string @@ "0x" ^ hex) hexs
 
 let write_header f =
