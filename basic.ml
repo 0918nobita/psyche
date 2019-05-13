@@ -107,6 +107,30 @@ let rec split size str =
 
 let make_list n len = Array.to_list @@ Array.make n len
 
+let write f n size =
+  let adjust_str_length size str =
+    let lack = String.length str mod size in
+      if lack = 0
+        then str
+        else String.make lack '0' ^ str
+  in
+    let
+      adjust_arr_length arr size =
+        let lack = size - List.length arr in
+          if lack = 0
+            then arr
+            else
+              if lack > 0
+                then arr @ make_list lack 0
+                else failwith "(adjust_arr_length) Invalid format" and
+      base = List.map
+        (fun hex -> int_of_string @@ "0x" ^ hex)
+        @@ split 2
+        @@ adjust_str_length 2
+        @@ Printf.sprintf "%X" n
+    in
+      List.iter (fun byte -> output_byte f byte) @@ adjust_arr_length base size
+
 let write_hexs f hexs = List.iter (fun hex -> output_byte f  @@ int_of_string @@ "0x" ^ hex) hexs
 
 let write_header f =
