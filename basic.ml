@@ -131,13 +131,13 @@ let write f n size =
     in
       List.iter (fun byte -> output_byte f byte) @@ adjust_arr_length base size
 
+let write_uint32 f n = write f n 4;;
+
 let write_hexs f hexs = List.iter (fun hex -> output_byte f  @@ int_of_string @@ "0x" ^ hex) hexs
 
 let write_header f =
-  write_hexs f [
-    "00"; "61"; "73"; "6d"; (* WASM_BINARY_MAGIC *)
-    "01"; "00"; "00"; "00"; (* WASM_BINARY_VERSION *)
-  ]
+  write_uint32 f 1836278016;
+  write_uint32 f 1
 
 let write_type_header f =
   write_hexs f [
