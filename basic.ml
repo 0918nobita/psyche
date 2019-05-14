@@ -100,8 +100,8 @@ let rec split size str =
           let len = String.length s in
             if len >= size
               then
-                String.sub s (len - size) size
-                :: (split size @@ String.sub s 0 (len - size))
+                (split size @@ String.sub s 0 (len - size))
+                @ [String.sub s (len - size) size]
               else
                 failwith "(split) Invalid format"
 
