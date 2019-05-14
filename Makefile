@@ -1,0 +1,2 @@
+build:
+	ocamlopt basic.ml
