@@ -190,6 +190,10 @@ let bin_of_int = function
       in
         let (_, bin) = conv (n, "") in bin
 
+let rec chars_of_string = function
+  | "" -> []
+  | s -> String.get s 0 :: (chars_of_string @@ String.sub s 1 (String.length s - 1))
+
 let () =
   let
     out = open_out "out.wasm"
