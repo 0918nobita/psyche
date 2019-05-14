@@ -140,54 +140,44 @@ let write_header f =
   write_uint32 f 1
 
 let write_type_header f =
+  output_byte f 1; (* section code *)
+  output_byte f 5; (* section size *)
+  output_byte f 1 (* num types *)
+
+let write_type f =
+  output_byte f 96; (* func *)
+  output_byte f 0; (* num params *)
+  output_byte f 1; (* num results *)
+  output_byte f 127 (* i32 *)
+
+let write_function_header f =
+  output_byte f 3; (* section code *)
+  output_byte f 2; (* section size *)
+  output_byte f 1; (* num functions *)
+  output_byte f 0 (* function 0 signature index *)
+
+let write_export f =
+  output_byte f 7; (* section code *)
+  output_byte f 8; (* section size *)
+  output_byte f 1; (* num exports *)
+  output_byte f 4; (* string length *)
   write_hexs f [
-    "01"; (* section code *)
-    "05"; (* section size *)
-    "01"; (* num types *)
-  ]
+    "6d"; "61"; "69"; "6e"; (* main ; export name *)
+  ];
+  output_byte f 0; (* export kind *)
+  output_byte f 0 (* export func index *)
 
-  let write_type f =
-    write_hexs f [
-      "60"; (* func *)
-      "00"; (* num params *)
-      "01"; (* num results *)
-      "7f"; (* i32 *)
-    ]
+let write_code_header f =
+  output_byte f 10; (* section code *)
+  output_byte f 6; (* section size *)
+  output_byte f 1 (* num functions *)
 
-  let write_function_header f =
-    write_hexs f [
-      "03"; (* section code *)
-      "02"; (* section size *)
-      "01"; (* num functions *)
-      "00"; (* function 0 signature index *)
-    ]
-
-  let write_export f =
-    write_hexs f [
-      "07"; (* section code *)
-      "08"; (* section size *)
-      "01"; (* num exports *)
-      "04"; (* string length *)
-      "6d"; "61"; "69"; "6e"; (* main ; export name *)
-      "00"; (* export kind *)
-      "00"; (* export func index *)
-    ]
-
-  let write_code_header f =
-    write_hexs f [
-      "0a"; (* section code *)
-      "06"; (* section size *)
-      "01"; (* num functions *)
-    ]
-
-  let write_code f =
-    write_hexs f [
-      "04"; (* func body size *)
-      "00"; (* local decl count *)
-      "41"; (* i32.const *)
-      "2a"; (* i32 literal *)
-      "0b"; (* end *)
-    ]
+let write_code f =
+  output_byte f 4; (* func body size *)
+  output_byte f 0; (* local decl count *)
+  output_byte f 65; (* i32.const *)
+  output_byte f 42; (* i32.literal *)
+  output_byte f 11 (* end *)
 
 let () =
   let
