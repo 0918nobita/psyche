@@ -199,6 +199,9 @@ let int_of_bin bin =
     List.fold_left (fun acc sum -> sum + acc) 0 @@
       List.mapi (fun i c -> if c = '1' then int_of_float @@ 2. ** (float_of_int i) else 0) chars
 
+let twos_complement bin =
+  bin_of_int @@ 1 + int_of_bin (String.map (function '0' -> '1' | '1' -> '0' | c -> c) bin)
+
 let () =
   let
     out = open_out "out.wasm"
