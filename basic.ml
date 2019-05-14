@@ -202,6 +202,20 @@ let int_of_bin bin =
 let twos_complement bin =
   bin_of_int @@ 1 + int_of_bin (String.map (function '0' -> '1' | '1' -> '0' | c -> c) bin)
 
+let leb128_of_int n =
+  List.rev @@
+    List.mapi
+      (fun i bin -> int_of_string @@ "0b" ^ (if i = 0 then "0" else "1") ^ bin)
+      @@ split 7
+      @@ if n >= 0
+        then
+          adjust_str_length 7
+          @@ bin_of_int n
+        else
+          twos_complement
+          @@ adjust_str_length 7
+          @@ bin_of_int @@ (-1) * n
+
 let () =
   let
     out = open_out "out.wasm"
