@@ -194,6 +194,11 @@ let rec chars_of_string = function
   | "" -> []
   | s -> String.get s 0 :: (chars_of_string @@ String.sub s 1 (String.length s - 1))
 
+let int_of_bin bin =
+  let chars = List.rev @@ chars_of_string bin in
+    List.fold_left (fun acc sum -> sum + acc) 0 @@
+      List.mapi (fun i c -> if c = '1' then int_of_float @@ 2. ** (float_of_int i) else 0) chars
+
 let () =
   let
     out = open_out "out.wasm"
