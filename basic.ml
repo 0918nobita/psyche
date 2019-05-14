@@ -107,29 +107,30 @@ let rec split size str =
 
 let make_list n len = Array.to_list @@ Array.make n len
 
+let adjust_str_length size str =
+  let lack = String.length str mod size in
+    if lack = 0
+      then str
+      else String.make (size - lack) '0' ^ str
+
 let write f n size =
-  let adjust_str_length size str =
-    let lack = String.length str mod size in
-      if lack = 0
-        then str
-        else String.make lack '0' ^ str
-  in
-    let
-      adjust_arr_length arr size =
-        let lack = size - List.length arr in
-          if lack = 0
-            then arr
-            else
-              if lack > 0
-                then arr @ make_list lack 0
-                else failwith "(adjust_arr_length) Invalid format" and
-      base = List.map
+  let
+    adjust_arr_length arr size =
+      let lack = size - List.length arr in
+        if lack = 0
+          then arr
+          else
+            if lack > 0
+              then arr @ make_list lack 0
+              else failwith "(adjust_arr_length) Invalid format" and
+    base = List.rev
+      @@ List.map
         (fun hex -> int_of_string @@ "0x" ^ hex)
         @@ split 2
         @@ adjust_str_length 2
         @@ Printf.sprintf "%X" n
-    in
-      List.iter (fun byte -> output_byte f byte) @@ adjust_arr_length base size
+  in
+    List.iter (fun byte -> output_byte f byte) @@ adjust_arr_length base size
 
 let write_uint32 f n = write f n 4;;
 
