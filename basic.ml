@@ -179,6 +179,16 @@ let write_code f =
   output_byte f 42; (* i32.literal *)
   output_byte f 11 (* end *)
 
+let bin_of_int = function
+  | 0 -> "0"
+  | n ->
+      let rec conv = function
+        | (0, bin) -> (0, bin)
+        | (decimal, bin) ->
+            conv (decimal / 2, (string_of_int @@ decimal mod 2) ^ bin)
+      in
+        let (_, bin) = conv (n, "") in bin
+
 let () =
   let
     out = open_out "out.wasm"
