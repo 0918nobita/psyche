@@ -168,16 +168,16 @@ let write_export f =
   output_byte f 0; (* export kind *)
   output_byte f 0 (* export func index *)
 
-let write_code_header f =
+let write_code_header f leb128 =
   output_byte f 10; (* section code *)
-  output_byte f 6; (* section size *)
+  output_byte f @@ 5 + List.length leb128; (* section size *)
   output_byte f 1 (* num functions *)
 
-let write_code f =
-  output_byte f 4; (* func body size *)
+let write_code f leb128 =
+  output_byte f @@ 3 + List.length leb128; (* func body size *)
   output_byte f 0; (* local decl count *)
   output_byte f 65; (* i32.const *)
-  output_byte f 42; (* i32.literal *)
+  List.iter (output_byte f) leb128; (* i32 literal *)
   output_byte f 11 (* end *)
 
 let bin_of_int = function
@@ -216,15 +216,37 @@ let leb128_of_int n =
           @@ adjust_str_length 7
           @@ bin_of_int @@ (-1) * n
 
-let () =
-  let
-    out = open_out "out.wasm"
+let read filename =
+	let
+    f = open_in filename and
+    str = ref ""
   in
-    write_header out;
-    write_type_header out;
-    write_type out;
-    write_function_header out;
-    write_export out;
-    write_code_header out;
-    write_code out;
-    close_out out
+    (try
+      while true do str := !str ^ input_line f done;
+    with
+      _ -> ());
+    close_in f;
+    !str
+
+let () =
+  let src = read Sys.argv.(1) in
+  let result = integer src 0 in
+    match result with
+      | Failure -> failwith "(1) Syntax Error"
+      | Success (ast_list, _, p) ->
+          match ast_list with
+            | [IntLiteral n] ->
+                let
+                  out = open_out "out.wasm" and
+                  leb128 = leb128_of_int n
+                in
+                  List.iter print_int leb128;
+                  write_header out;
+                  write_type_header out;
+                  write_type out;
+                  write_function_header out;
+                  write_export out;
+                  write_code_header out leb128;
+                  write_code out leb128;
+                  close_out out;
+            | _ -> failwith "(2) Syntax Error"
