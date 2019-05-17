@@ -180,7 +180,7 @@ let write_code f leb128 =
   List.iter (output_byte f) leb128; (* i32 literal *)
   output_byte f 11 (* end *)
 
-let bin_of_int = function
+let bin_of_int size = function
   | 0 -> "0"
   | n ->
       let rec conv = function
@@ -188,7 +188,11 @@ let bin_of_int = function
         | (decimal, bin) ->
             conv (decimal / 2, (string_of_int @@ decimal mod 2) ^ bin)
       in
-        let (_, bin) = conv (n, "") in bin
+        let (_, bin) = conv (n, "") in
+        let lack = size - String.length bin in
+          if lack >= 0
+            then String.make lack '0' ^ bin
+            else failwith "(bin_of_int) Overflow"
 
 let rec chars_of_string = function
   | "" -> []
@@ -199,8 +203,8 @@ let int_of_bin bin =
     List.fold_left (fun acc sum -> sum + acc) 0 @@
       List.mapi (fun i c -> if c = '1' then int_of_float @@ 2. ** (float_of_int i) else 0) chars
 
-let twos_complement bin =
-  bin_of_int @@ 1 + int_of_bin (String.map (function '0' -> '1' | '1' -> '0' | c -> c) bin)
+let twos_complement size bin =
+  bin_of_int size @@ 1 + int_of_bin (String.map (function '0' -> '1' | '1' -> '0' | c -> c) bin)
 
 let leb128_of_int n =
   List.rev @@
@@ -209,12 +213,10 @@ let leb128_of_int n =
       @@ split 7
       @@ if n >= 0
         then
-          adjust_str_length 7
-          @@ bin_of_int n
+          adjust_str_length 7 @@ bin_of_int 32 n
         else
-          twos_complement
-          @@ adjust_str_length 7
-          @@ bin_of_int @@ (-1) * n
+          adjust_str_length 7 @@ twos_complement 32
+          @@ bin_of_int 32 @@ (-1) * n
 
 let read filename =
 	let
