@@ -1,2 +1,2 @@
 build:
-	ocamlopt basic.ml
+	ocamlopt parser_combinator.ml parser.ml basic.ml
