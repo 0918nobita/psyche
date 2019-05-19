@@ -14,29 +14,33 @@ module Binary :
 
     let make_list len elem = Array.to_list @@ Array.make len elem
 
-    let plus size a b =
+    let plus size x y =
       let rec plus_inner = function
-        | (false, [], [], bits) -> bits
-        | (false, bit :: a, [], c) -> bit :: c
-        | (false, [], bit :: b, c) -> bit :: c
-        | (false, Zero :: a, Zero :: b, c) -> plus_inner (false, a, b, Zero :: c)
-        | (false, Zero :: a, One :: b, c) -> plus_inner (false, a, b, One :: c)
-        | (false, One :: a, Zero :: b, c) -> plus_inner (false, a, b, One :: c)
-        | (false, One :: a, One :: b, c) -> plus_inner (true, a, b, Zero :: c)
-        | (true, [], [], c) -> One :: c
-        | (true, Zero :: a, [], c) -> One :: c
-        | (true, One :: a, [], c) -> One :: Zero :: c
-        | (true, [], Zero :: b, c) -> One :: c
-        | (true, [], One :: b, c) -> One :: Zero :: c
-        | (true, Zero :: a, Zero :: b, c) -> plus_inner (false, a, b, One :: c)
-        | (true, Zero :: a, One :: b, c) -> plus_inner (true, a, b, Zero :: c)
-        | (true, One :: a, Zero :: b, c) -> plus_inner (true, a, b, Zero :: c)
-        | (true, One :: a, One :: b, c) -> plus_inner (true, a, b, One :: c)
+        | (false, a, b, c) ->
+            (match (a, b, c) with
+              | ([], [], bits) -> bits
+              | (bit :: a, [], c) -> bit :: c
+              | ([], bit :: b, c) -> bit :: c
+              | (Zero :: a, Zero :: b, c) -> plus_inner (false, a, b, Zero :: c)
+              | (Zero :: a, One :: b, c) -> plus_inner (false, a, b, One :: c)
+              | (One :: a, Zero :: b, c) -> plus_inner (false, a, b, One :: c)
+              | (One :: a, One :: b, c) -> plus_inner (true, a, b, Zero :: c))
+        | (true, a, b, c) ->  (* set carry flag *)
+            (match (a, b, c) with
+              | ([], [], c) -> One :: c
+              | (Zero :: a, [], c) -> One :: c
+              | (One :: a, [], c) -> One :: Zero :: c
+              | ([], Zero :: b, c) -> One :: c
+              | ([], One :: b, c) -> One :: Zero :: c
+              | (Zero :: a, Zero :: b, c) -> plus_inner (false, a, b, One :: c)
+              | (Zero :: a, One :: b, c) -> plus_inner (true, a, b, Zero :: c)
+              | (One :: a, Zero :: b, c) -> plus_inner (true, a, b, Zero :: c)
+              | (One :: a, One :: b, c) -> plus_inner (true, a, b, One :: c))
       in
-        let c = plus_inner (false, List.rev a, List.rev b, []) in
-        let lack = size - List.length c in
+        let z = plus_inner (false, List.rev x, List.rev y, []) in
+        let lack = size - List.length z in
           if lack >= 0
-            then (make_list lack Zero) @ c
+            then (make_list lack Zero) @ z
             else failwith "(plus) Overflow"
 
     let twos_complement size bin =
