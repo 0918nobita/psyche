@@ -6,6 +6,7 @@ module Binary :
     val twos_complement : int -> bit list -> bit list
     val bin_of_int : int -> int -> bit list
     val string_of_bin : bin -> string
+    val slice : 'a list -> int -> int -> 'a list
   end
 =
   struct
@@ -64,4 +65,15 @@ module Binary :
     let string_of_bin bits =
       String.concat ""
         @@ List.map (function Zero -> "0" | One -> "1") bits
+
+    let slice arr b e =
+      let rec slice_inner = function
+        | ([], _, _, _, part) -> part
+        | (_, current, _, e, part) when current > e -> part
+        | (head :: tail, current, b, e, part) when current >= b ->
+            slice_inner (tail, current + 1, b, e, part @ [head])
+        | (head :: tail, current, b, e, part) ->
+            slice_inner (tail, current + 1, b, e, part)
+      in
+        slice_inner (arr, 0, b, e, [])
   end
