@@ -4,7 +4,7 @@ module Binary :
     type bin = bit list
     val plus : int -> bit list -> bit list -> bit list
     val twos_complement : int -> bit list -> bit list
-    val bin_of_unsigned : int -> int -> bit list
+    val bin_of_int : int -> int -> bit list
     val string_of_bin : bin -> string
   end
 =
@@ -46,9 +46,9 @@ module Binary :
     let twos_complement size bin =
       plus size [One] @@ List.map (function Zero -> One | One -> Zero) bin
 
-    let bin_of_unsigned size = function
+    let rec bin_of_int size = function
       | 0 -> (make_list size Zero)
-      | n ->
+      | n when n > 0 ->
           let rec conv = function
               | (0, bin) -> (0, bin)
               | (decimal, bin) ->
@@ -59,6 +59,7 @@ module Binary :
                 if lack >= 0
                   then (make_list lack Zero) @ bin
                   else failwith "(bin_of_int) Overflow"
+      | n -> twos_complement size @@ bin_of_int size @@ (-1) * n
 
     let string_of_bin bits =
       String.concat ""
