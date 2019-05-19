@@ -1,12 +1,14 @@
 module Binary :
   sig
-    type bin
     val bin_of_unsigned : int -> int -> bin
+    type bit = Zero | One
+    type bin = bit list
     val string_of_bin : bin -> string
   end
 =
   struct
-    type bin = Bin of int list
+    type bit = Zero | One
+    type bin = bit list
 
     let make_list len elem = Array.to_list @@ Array.make len elem
 
