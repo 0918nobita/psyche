@@ -19,8 +19,8 @@ module Binary :
         | (false, a, b, c) ->
             (match (a, b, c) with
               | ([], [], bits) -> bits
-              | (bit :: a, [], c) -> bit :: c
-              | ([], bit :: b, c) -> bit :: c
+              | (bit :: a, [], c) -> plus_inner (false, a, [], bit :: c)
+              | ([], bit :: b, c) -> plus_inner (false, [], b, bit :: c)
               | (Zero :: a, Zero :: b, c) -> plus_inner (false, a, b, Zero :: c)
               | (Zero :: a, One :: b, c) -> plus_inner (false, a, b, One :: c)
               | (One :: a, Zero :: b, c) -> plus_inner (false, a, b, One :: c)
@@ -28,10 +28,10 @@ module Binary :
         | (true, a, b, c) ->  (* set carry flag *)
             (match (a, b, c) with
               | ([], [], c) -> One :: c
-              | (Zero :: a, [], c) -> One :: c
-              | (One :: a, [], c) -> One :: Zero :: c
-              | ([], Zero :: b, c) -> One :: c
-              | ([], One :: b, c) -> One :: Zero :: c
+              | (Zero :: a, [], c) -> plus_inner (false, a, [], One :: c)
+              | (One :: a, [], c) -> plus_inner (true, a, [], Zero :: c)
+              | ([], Zero :: b, c) -> plus_inner (false, [], b, One :: c)
+              | ([], One :: b, c) -> plus_inner (true, [], b, Zero :: c)
               | (Zero :: a, Zero :: b, c) -> plus_inner (false, a, b, One :: c)
               | (Zero :: a, One :: b, c) -> plus_inner (true, a, b, Zero :: c)
               | (One :: a, Zero :: b, c) -> plus_inner (true, a, b, Zero :: c)
