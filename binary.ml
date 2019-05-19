@@ -53,12 +53,12 @@ module Binary :
               | (0, bin) -> (0, bin)
               | (decimal, bin) ->
                   conv (decimal / 2, (if decimal mod 2 = 0 then Zero else One) :: bin)
-            in
-              let (_, bin) = conv (n, []) in
-              let lack = size - List.length bin in
-                if lack >= 0
-                  then (make_list lack Zero) @ bin
-                  else failwith "(bin_of_int) Overflow"
+          in
+            let (_, bin) = conv (n, []) in
+            let lack = size - List.length bin in
+              if lack >= 0
+                then (make_list lack Zero) @ bin
+                else failwith "(bin_of_int) Overflow"
       | n -> twos_complement size @@ bin_of_int size @@ (-1) * n
 
     let string_of_bin bits =
