@@ -26,6 +26,7 @@ module Binary :
                 then Bin ((make_list lack 0) @ bin)
                 else failwith "(bin_of_int) Overflow"
 
-    let string_of_bin (Bin bin) =
-      String.concat "" @@ List.map string_of_int bin
+    let string_of_bin bits =
+      String.concat ""
+        @@ List.map (function Zero -> "0" | One -> "1") bits
   end
