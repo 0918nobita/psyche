@@ -3,6 +3,7 @@ module Binary :
     type bit = Zero | One
     type bin = bit list
     val plus : int -> bit list -> bit list -> bit list
+    val twos_complement : int -> bit list -> bit list
     val bin_of_unsigned : int -> int -> bit list
     val string_of_bin : bin -> string
   end
@@ -37,6 +38,9 @@ module Binary :
           if lack >= 0
             then (make_list lack Zero) @ c
             else failwith "(plus) Overflow"
+
+    let twos_complement size bin =
+      plus size [One] @@ List.map (function Zero -> One | One -> Zero) bin
 
     let bin_of_unsigned size = function
       | 0 -> (make_list size Zero)
