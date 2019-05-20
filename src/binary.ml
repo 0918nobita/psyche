@@ -7,6 +7,7 @@ module Binary :
     val bin_of_int : int -> int -> bit list
     val string_of_bin : bin -> string
     val slice : 'a list -> int -> int -> 'a list
+    val split_per : int -> 'a list -> ('a list) list
   end
 =
   struct
@@ -76,4 +77,12 @@ module Binary :
             slice_inner (tail, current + 1, b, e, part)
       in
         List.rev @@ slice_inner (arr, 0, b, e, [])
+
+    let split_per size arr =
+      let len = List.length arr in
+      let rec split_per_inner = function
+        | (current, part) when current >= len -> part
+        | (current, part) -> split_per_inner (current + size, slice arr current (current + size - 1) :: part)
+      in
+        List.rev @@ split_per_inner (0, [])
   end
