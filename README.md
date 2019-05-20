@@ -1,5 +1,7 @@
-# Mini Language
+# Psyche
 
-自作プログラミング言語のコンパイラ
+A WASM friendly lightweight programming language implemented in OCaml
 
-wasm を出力する
+## Build
+
+In preparation

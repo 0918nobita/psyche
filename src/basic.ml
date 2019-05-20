@@ -1,5 +1,3 @@
-open Parser
-
 let rec split size str =
   if size < 1
     then
@@ -16,7 +14,9 @@ let rec split size str =
               else
                 failwith "(split) Invalid format"
 
-let make_list n len = Array.to_list @@ Array.make n len
+let () = print_string "hello, world"
+
+(*let make_list n len = Array.to_list @@ Array.make n len
 
 let adjust_str_length size str =
   let lack = String.length str mod size in
@@ -91,43 +91,9 @@ let write_code f leb128 =
   List.iter (output_byte f) leb128; (* i32 literal *)
   output_byte f 11 (* end *)
 
-let bin_of_int size = function
-  | 0 -> "0"
-  | n ->
-      let rec conv = function
-        | (0, bin) -> (0, bin)
-        | (decimal, bin) ->
-            conv (decimal / 2, (string_of_int @@ decimal mod 2) ^ bin)
-      in
-        let (_, bin) = conv (n, "") in
-        let lack = size - String.length bin in
-          if lack >= 0
-            then String.make lack '0' ^ bin
-            else failwith "(bin_of_int) Overflow"
-
 let rec chars_of_string = function
   | "" -> []
   | s -> String.get s 0 :: (chars_of_string @@ String.sub s 1 (String.length s - 1))
-
-let int_of_bin bin =
-  let chars = List.rev @@ chars_of_string bin in
-    List.fold_left (fun acc sum -> sum + acc) 0 @@
-      List.mapi (fun i c -> if c = '1' then int_of_float @@ 2. ** (float_of_int i) else 0) chars
-
-let twos_complement size bin =
-  bin_of_int size @@ 1 + int_of_bin (String.map (function '0' -> '1' | '1' -> '0' | c -> c) bin)
-
-let leb128_of_int n =
-  List.rev @@
-    List.mapi
-      (fun i bin -> int_of_string @@ "0b" ^ (if i = 0 then "0" else "1") ^ bin)
-      @@ split 7
-      @@ if n >= 0
-        then
-          adjust_str_length 7 @@ bin_of_int 32 n
-        else
-          adjust_str_length 7 @@ twos_complement 32
-          @@ bin_of_int 32 @@ (-1) * n
 
 let read filename =
 	let
@@ -162,4 +128,4 @@ let () =
                   write_code_header out leb128;
                   write_code out leb128;
                   close_out out;
-            | _ -> failwith "(2) Syntax Error"
+            | _ -> failwith "(2) Syntax Error"*)

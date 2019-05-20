@@ -6,3 +6,6 @@ node_modules
 *.cmo
 *.cma
 *.wasm
+.merlin
+*.install
+_build

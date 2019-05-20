@@ -71,9 +71,9 @@ module Binary :
         | ([], _, _, _, part) -> part
         | (_, current, _, e, part) when current > e -> part
         | (head :: tail, current, b, e, part) when current >= b ->
-            slice_inner (tail, current + 1, b, e, part @ [head])
-        | (head :: tail, current, b, e, part) ->
+            slice_inner (tail, current + 1, b, e, head :: part)
+        | (_ :: tail, current, b, e, part) ->
             slice_inner (tail, current + 1, b, e, part)
       in
-        slice_inner (arr, 0, b, e, [])
+        List.rev @@ slice_inner (arr, 0, b, e, [])
   end
