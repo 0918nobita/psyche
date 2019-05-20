@@ -1,4 +1,18 @@
-let rec split size str =
+let read filename =
+	let
+    f = open_in filename and
+    str = ref ""
+  in
+    (try
+      while true do str := !str ^ input_line f done;
+    with
+      _ -> ());
+    close_in f;
+    !str
+
+let () = print_string @@ read @@ Sys.argv.(1)
+
+(*let rec split size str =
   if size < 1
     then
       failwith "(split) Invalid size"
@@ -12,9 +26,7 @@ let rec split size str =
                 (split size @@ String.sub s 0 (len - size))
                 @ [String.sub s (len - size) size]
               else
-                failwith "(split) Invalid format"
-
-let () = print_string "hello, world"
+                failwith "(split) Invalid format"*)
 
 (*let make_list n len = Array.to_list @@ Array.make n len
 
