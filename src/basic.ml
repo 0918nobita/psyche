@@ -10,7 +10,11 @@ let read filename =
     close_in f;
     !str
 
-let () = print_string @@ read @@ Sys.argv.(1)
+let () =
+  let src = read @@ Sys.argv.(1) in
+    match Parser.integer src 0 with
+      | Failure -> failwith "Syntax Error"
+      | Success _ -> print_string "Success"
 
 (*let rec split size str =
   if size < 1
@@ -106,18 +110,6 @@ let write_code f leb128 =
 let rec chars_of_string = function
   | "" -> []
   | s -> String.get s 0 :: (chars_of_string @@ String.sub s 1 (String.length s - 1))
-
-let read filename =
-	let
-    f = open_in filename and
-    str = ref ""
-  in
-    (try
-      while true do str := !str ^ input_line f done;
-    with
-      _ -> ());
-    close_in f;
-    !str
 
 let () =
   let src = read Sys.argv.(1) in
