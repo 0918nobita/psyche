@@ -8,6 +8,7 @@ module Binary :
     val string_of_bin : bin -> string
     val slice : 'a list -> int -> int -> 'a list
     val split_per : int -> 'a list -> ('a list) list
+    val int_of_bin : bit list -> int
   end
 =
   struct
@@ -85,4 +86,12 @@ module Binary :
         | (current, part) -> split_per_inner (current + size, slice arr current (current + size - 1) :: part)
       in
         List.rev @@ split_per_inner (0, [])
+
+    let int_of_bin bin =
+      List.fold_left
+        (fun acc n -> acc + n)
+        0
+        @@ List.mapi
+          (fun i bit -> (int_of_float @@ 2. ** float_of_int i) * (match bit with Zero -> 0 | One -> 1))
+          @@ List.rev bin
   end
