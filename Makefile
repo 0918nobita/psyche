@@ -1,5 +1,5 @@
 build:
-	ocamlopt parser_combinator.ml parser.ml basic.ml
+	dune build
 
 clean:
 	rm -f *.cmi *.cma *.cmx *.cmo *.o *.out *.wasm
