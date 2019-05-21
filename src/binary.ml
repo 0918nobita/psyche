@@ -8,7 +8,7 @@ module Binary :
     val signed_bin_of_int : int -> bit list
     val string_of_bin : bin -> string
     val int_of_bin : bit list -> int
-    val leb128_of_int : int -> bit list list
+    val leb128_of_int : int -> int list
   end
 =
   struct
@@ -113,7 +113,8 @@ module Binary :
           else twos_complement @@ adjust_length bin
 
     let leb128_of_int n =
-        List.rev
+      List.map int_of_bin
+        @@ List.rev
           @@ List.mapi
             (fun i byte -> if i = 0 then Zero :: byte else One :: byte)
             @@ split_per 7 @@ signed_bin_of_int n
