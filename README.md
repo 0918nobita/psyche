@@ -11,5 +11,5 @@ make build
 ## Test
 
 ```bash
-dune exec psyche test/example.bas
+dune exec psyche test/example.psy
 ```
