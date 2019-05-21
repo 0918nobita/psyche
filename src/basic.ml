@@ -56,28 +56,33 @@ let export =
   ; 0 (* export func index *)
   ]
 
-let code_header leb128 =
+let code_header x y =
   [ 10 (* section code *)
-  ; 5 + List.length leb128 (* section size *)
+  ; 7 + List.length x + List.length y (* section size *)
   ; 1  (* num functions *)
   ]
 
-let code leb128 =
-  [ 3 + List.length leb128 (* func body size *)
-  ; 0  (* local decl count *)
-  ; 65 (* i32.const *)
+let code x y =
+  [ 5 + List.length x + List.length y (* func body size *)
+  ; 0   (* local decl count *)
+  ; 65  (* i32.const *)
   ] @
-  leb128 @
-  [ 11 (* end *)
+  x @   (* i32 literal *)
+  [ 65  (* i32.const *)
+  ] @
+  y @   (* i32 literal *)
+  [ 106 (* i32.add *)
+  ; 11  (* end *)
   ]
 
 let () =
   let src = read @@ Sys.argv.(1) in
-    match Parser.integer src 0 with
-      | Success ([Ast (IntLiteral n)], _, p) when p = String.length src ->
+    match Parser.two_integers src 0 with
+      | Success ([Ast (TwoIntegers (x, y))], _, p) when p = String.length src ->
           let
             out = open_out "out.wasm" and
-            leb128 = Binary.leb128_of_int n
+            x_leb128 = Binary.leb128_of_int x and
+            y_leb128 = Binary.leb128_of_int y
           in
             write out @@
               header
@@ -85,7 +90,7 @@ let () =
               @ type_0
               @ function_header
               @ export
-              @ code_header leb128
-              @ code leb128;
+              @ code_header x_leb128 y_leb128
+              @ code x_leb128 y_leb128;
             close_out out
       | _ -> failwith "Syntax Error"
