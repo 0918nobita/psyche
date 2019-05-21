@@ -17,22 +17,6 @@ let () =
           print_int n
       | _ -> failwith "Syntax Error"
 
-(*let rec split size str =
-  if size < 1
-    then
-      failwith "(split) Invalid size"
-    else
-      match str with
-        | "" -> []
-        | s ->
-          let len = String.length s in
-            if len >= size
-              then
-                (split size @@ String.sub s 0 (len - size))
-                @ [String.sub s (len - size) size]
-              else
-                failwith "(split) Invalid format"*)
-
 (*let make_list n len = Array.to_list @@ Array.make n len
 
 let adjust_str_length size str =
@@ -107,30 +91,4 @@ let write_code f leb128 =
   output_byte f 65; (* i32.const *)
   List.iter (output_byte f) leb128; (* i32 literal *)
   output_byte f 11 (* end *)
-
-let rec chars_of_string = function
-  | "" -> []
-  | s -> String.get s 0 :: (chars_of_string @@ String.sub s 1 (String.length s - 1))
-
-let () =
-  let src = read Sys.argv.(1) in
-  let result = integer src 0 in
-    match result with
-      | Failure -> failwith "(1) Syntax Error"
-      | Success (ast_list, _, p) ->
-          match ast_list with
-            | [Ast (IntLiteral n)] ->
-                let
-                  out = open_out "out.wasm" and
-                  leb128 = leb128_of_int n
-                in
-                  List.iter print_int leb128;
-                  write_header out;
-                  write_type_header out;
-                  write_type out;
-                  write_function_header out;
-                  write_export out;
-                  write_code_header out leb128;
-                  write_code out leb128;
-                  close_out out;
-            | _ -> failwith "(2) Syntax Error"*)
+*)
