@@ -103,3 +103,5 @@ let leb128_of_int n =
       @@ List.mapi
         (fun i byte -> if i = 0 then Zero :: byte else One :: byte)
         @@ split_per 7 @@ signed_bin_of_int n
+
+let to_uint32 n = List.rev @@ List.map int_of_bin @@ split_per 8 @@ adjust_arr_length (bin_of_unsigned n) 32 Zero
