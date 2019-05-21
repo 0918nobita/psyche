@@ -13,8 +13,9 @@ let read filename =
 let () =
   let src = read @@ Sys.argv.(1) in
     match Parser.integer src 0 with
-      | Failure -> failwith "Syntax Error"
-      | Success _ -> print_string "Success"
+      | Success ([Ast (IntLiteral n)], _, p) when p = String.length src ->
+          print_int n
+      | _ -> failwith "Syntax Error"
 
 (*let rec split size str =
   if size < 1
