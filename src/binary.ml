@@ -2,15 +2,11 @@ module Binary :
   sig
     type bit = Zero | One
     type bin = bit list
-    val fixed_plus : int -> bit list -> bit list -> bit list
-    val fixed_twos_complement : int -> bit list -> bit list
-    val fixed_bin_of_int : int -> int -> bit list
-    val variable_plus : bit list -> bit list -> bit list
-    val variable_twos_complement : bit list -> bit list
-    val variable_bin_of_int : int -> bit list
+    val plus : bit list -> bit list -> bit list
+    val twos_complement : bit list -> bit list
+    val bin_of_unsigned : int -> bit list
+    val signed_bin_of_int : int -> bit list
     val string_of_bin : bin -> string
-    val slice : 'a list -> int -> int -> 'a list
-    val split_per : int -> 'a list -> ('a list) list
     val int_of_bin : bit list -> int
     val leb128_of_int : int -> bit list list
   end
@@ -21,36 +17,7 @@ module Binary :
 
     let make_list len elem = Array.to_list @@ Array.make len elem
 
-    let fixed_plus size x y =
-      let rec plus_inner = function
-        | (false, a, b, c) ->
-            (match (a, b, c) with
-              | ([], [], bits) -> bits
-              | (bit :: a, [], c) -> plus_inner (false, a, [], bit :: c)
-              | ([], bit :: b, c) -> plus_inner (false, [], b, bit :: c)
-              | (Zero :: a, Zero :: b, c) -> plus_inner (false, a, b, Zero :: c)
-              | (Zero :: a, One :: b, c) -> plus_inner (false, a, b, One :: c)
-              | (One :: a, Zero :: b, c) -> plus_inner (false, a, b, One :: c)
-              | (One :: a, One :: b, c) -> plus_inner (true, a, b, Zero :: c))
-        | (true, a, b, c) ->  (* set carry flag *)
-            (match (a, b, c) with
-              | ([], [], c) -> One :: c
-              | (Zero :: a, [], c) -> plus_inner (false, a, [], One :: c)
-              | (One :: a, [], c) -> plus_inner (true, a, [], Zero :: c)
-              | ([], Zero :: b, c) -> plus_inner (false, [], b, One :: c)
-              | ([], One :: b, c) -> plus_inner (true, [], b, Zero :: c)
-              | (Zero :: a, Zero :: b, c) -> plus_inner (false, a, b, One :: c)
-              | (Zero :: a, One :: b, c) -> plus_inner (true, a, b, Zero :: c)
-              | (One :: a, Zero :: b, c) -> plus_inner (true, a, b, Zero :: c)
-              | (One :: a, One :: b, c) -> plus_inner (true, a, b, One :: c))
-      in
-        let z = plus_inner (false, List.rev x, List.rev y, []) in
-        let lack = size - List.length z in
-          if lack >= 0
-            then (make_list lack Zero) @ z
-            else failwith "(plus) Overflow"
-
-    let variable_plus x y =
+    let plus x y =
       let rec plus_inner = function
         | (false, a, b, c) ->
             (match (a, b, c) with
@@ -75,39 +42,19 @@ module Binary :
       in
         plus_inner (false, List.rev x, List.rev y, [])
 
-    let fixed_twos_complement size bin =
-      fixed_plus size [One] @@ List.map (function Zero -> One | One -> Zero) bin
+    let twos_complement bin =
+      plus [One] @@ List.map (function Zero -> One | One -> Zero) bin
 
-    let variable_twos_complement bin =
-      variable_plus [One] @@ List.map (function Zero -> One | One -> Zero) bin
-
-    let rec fixed_bin_of_int size = function
-      | 0 -> (make_list size Zero)
-      | n when n > 0 ->
-          let rec conv = function
-              | (0, bin) -> (0, bin)
-              | (decimal, bin) ->
-                  conv (decimal / 2, (if decimal mod 2 = 0 then Zero else One) :: bin)
-          in
-            let (_, bin) = conv (n, []) in
-            let lack = size - List.length bin in
-              if lack >= 0
-                then (make_list lack Zero) @ bin
-                else failwith "(bin_of_int) Overflow"
-      | n -> fixed_twos_complement size @@ fixed_bin_of_int size @@ (-1) * n
-
-    let rec variable_bin_of_int = function
+    let rec bin_of_unsigned = function
       | 0 -> [Zero]
       | n ->
           let rec conv = function
               | (0, bin) -> (0, bin)
               | (decimal, bin) ->
-                  conv (decimal / 2, (if decimal mod 2 = 0 then Zero else One) :: bin)
+                  conv (decimal / 2,
+                    (if decimal mod 2 = 0 then Zero else One) :: bin)
           in
-            let (_, bin) = conv (n, []) in
-              if n >= 0
-                then bin
-                else variable_twos_complement bin
+            let (_, bin) = conv (abs n, []) in bin
 
     let string_of_bin bits =
       String.concat ""
@@ -140,23 +87,34 @@ module Binary :
           (fun i bit -> (int_of_float @@ 2. ** float_of_int i) * (match bit with Zero -> 0 | One -> 1))
           @@ List.rev bin
 
-    let leb128_of_int n =
-      let rec len = function
-        | head :: tail when not @@ List.mem One head -> len tail
-        | bin -> List.length bin
-      in
-      let bytes = split_per 7 @@ fixed_bin_of_int 32 @@ abs n in
+    let pow a b = int_of_float @@ (float_of_int a) ** (float_of_int b)
+
+    let adjust_arr_length arr size fill =
+      let lack = size - List.length arr in
+        if lack = 0
+          then arr
+          else
+            if lack > 0
+              then make_list lack fill @ arr
+              else failwith "(adjust_arr_length) Invalid format"
+
+    let signed_bin_of_int n =
+      let bigger_multiple_of_7 n = if n mod 7 = 0 then n + 7 else 7 * (n / 7 + 1) in
       let
-        piece = len bytes and
-        length = List.length bytes
+        adjust_length bin =
+          adjust_arr_length
+            bin
+            (bigger_multiple_of_7 @@ List.length bin)
+            Zero
       in
+      let bin = bin_of_unsigned n in
+        if n >= 0
+          then adjust_length bin
+          else twos_complement @@ adjust_length bin
+
+    let leb128_of_int n =
         List.rev
           @@ List.mapi
             (fun i byte -> if i = 0 then Zero :: byte else One :: byte)
-            @@ if n >= 0
-              then
-                slice bytes (length - piece) (length - 1)
-              else
-                let twos_complement = split_per 7 @@ fixed_bin_of_int 32 n in
-                  slice twos_complement (length - piece) (length - 1)
+            @@ split_per 7 @@ signed_bin_of_int n
   end
