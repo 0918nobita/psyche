@@ -1,7 +1,7 @@
 module AST : sig
-  type ast = IntLiteral of int | TwoIntegers of int * int
+  type ast = IntLiteral of int
 end = struct
-  type ast = IntLiteral of int | TwoIntegers of int * int
+  type ast = IntLiteral of int
 end
 
 open AST
@@ -41,8 +41,8 @@ let integer target position =
         , target
         , p )
 
-let two_integers target position =
-  match sequence [integer; token " "; integer] target position with
-    | Success ([Ast (IntLiteral x); Token " "; Ast (IntLiteral y)], _, p) ->
-        Success ([Ast (TwoIntegers (x, y))], target, p)
+let many_integers target position =
+  match sequence [integer; many (sequence [token " "; integer])] target position with
+    | Success (ast_list, _, p) ->
+        Success (List.filter (function Token _ -> false | _ -> true) ast_list, target, p)
     | _ -> Failure

@@ -56,33 +56,49 @@ let export =
   ; 0 (* export func index *)
   ]
 
-let code_header x y =
-  [ 10 (* section code *)
-  ; 7 + List.length x + List.length y (* section size *)
-  ; 1  (* num functions *)
-  ]
+let code literals =
+  let
+    instructions = ref [] and
+    first = Binary.leb128_of_int @@ List.nth literals 0
+  in
+    List.iteri
+      (fun i literal ->
+        if i != 0
+          then instructions := !instructions @
+            65 (* i32.const *)
+            :: Binary.leb128_of_int literal @ (* i32 literal *)
+            [ 106 (* i32.add *)
+            ])
+      literals;
+    let embedded_data_length = List.length first + List.length !instructions in
+      [ 10 (* section size *)
+      ; 5 + embedded_data_length
+      ; 1 (* num functions *)
+      ] @
+      [ 3 + embedded_data_length (* func body size *)
+      ] @
+      [ 0 (* local decl count *)
+      ; 65 (* i32.const *)
+      ] @
+      first @
+      !instructions @
+      [ 11 (* end *)
+      ]
 
-let code x y =
-  [ 5 + List.length x + List.length y (* func body size *)
-  ; 0   (* local decl count *)
-  ; 65  (* i32.const *)
-  ] @
-  x @   (* i32 literal *)
-  [ 65  (* i32.const *)
-  ] @
-  y @   (* i32 literal *)
-  [ 106 (* i32.add *)
-  ; 11  (* end *)
-  ]
+open Parser
 
 let () =
   let src = read @@ Sys.argv.(1) in
-    match Parser.two_integers src 0 with
-      | Success ([Ast (TwoIntegers (x, y))], _, p) when p = String.length src ->
+  let rec literal_list_of_ast = function
+    | [] -> []
+    | Parser.Ast (IntLiteral n) :: tail -> n :: literal_list_of_ast tail
+    | _ -> failwith "Invalid format"
+  in
+    match many_integers src 0 with
+      | Success (ast, _, p) when p = String.length src ->
           let
             out = open_out "out.wasm" and
-            x_leb128 = Binary.leb128_of_int x and
-            y_leb128 = Binary.leb128_of_int y
+            literals = literal_list_of_ast ast
           in
             write out @@
               header
@@ -90,7 +106,6 @@ let () =
               @ type_0
               @ function_header
               @ export
-              @ code_header x_leb128 y_leb128
-              @ code x_leb128 y_leb128;
+              @ code literals;
             close_out out
       | _ -> failwith "Syntax Error"
