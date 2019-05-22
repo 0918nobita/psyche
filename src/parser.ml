@@ -62,6 +62,25 @@ let term target position =
           | _ -> Failure)
     | _ -> Failure
 
+let expr target position =
+  match sequence [term; many @@ sequence [choice [token "+"; token "-"]; term]] target position with
+    | Success (tokens, _, p) ->
+        (match tokens with
+          | [Ast _] as ast_list -> Success (ast_list, target, p)
+          | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when op = Token "+" || op = Token "-" ->
+              let ast = ref @@ if op = Token "+" then Add (lhs, rhs) else Sub (lhs, rhs) in
+              let rec conv base = function
+                | [] -> ()
+                | op :: Ast (_ as r) :: tail when op = Token "+" || op = Token "-" ->
+                    base := if op = Token "+" then Add (!base, r) else Sub (!base, r);
+                    conv base tail
+                | _ -> failwith ""
+              in
+                conv ast tail;
+                Success ([Ast !ast], target, p)
+          | _ -> Failure)
+    | _ -> Failure
+
 let many_integers target position =
   match sequence [integer; many (sequence [token " "; integer])] target position with
     | Success (ast_list, _, p) ->
