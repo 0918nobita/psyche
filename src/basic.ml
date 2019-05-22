@@ -71,8 +71,8 @@ let code literals =
             ])
       literals;
     let embedded_data_length = List.length first + List.length !instructions in
-      [ 10 (* section size *)
-      ; 5 + embedded_data_length
+      [ 10 (* section code *)
+      ; 5 + embedded_data_length (* section size *)
       ; 1 (* num functions *)
       ] @
       [ 3 + embedded_data_length (* func body size *)
