@@ -1,7 +1,7 @@
 module AST : sig
-  type ast = IntLiteral of int
+  type ast = IntLiteral of int | Add of ast * ast | Sub of ast * ast | Mul of ast * ast | Div of ast * ast
 end = struct
-  type ast = IntLiteral of int
+  type ast = IntLiteral of int | Add of ast * ast | Sub of ast * ast | Mul of ast * ast | Div of ast * ast
 end
 
 open AST
@@ -42,6 +42,25 @@ let integer target position =
                   "" ast_list )) ]
         , target
         , p )
+
+let term target position =
+  match sequence [integer; many @@ sequence [choice [token "*"; token "/"]; integer]] target position with
+    | Success (tokens, _, p) ->
+        (match tokens with
+          | [Ast IntLiteral _] as ast_list -> Success (ast_list, target, p)
+          | Ast (IntLiteral _ as lhs) :: op :: Ast (IntLiteral _ as rhs) :: tail when op = Token "*" || op = Token "/" ->
+              let ast = ref @@ if op = Token "*" then Mul (lhs, rhs) else Div (lhs, rhs) in
+              let rec conv base = function
+                | [] -> ()
+                | op :: Ast (IntLiteral _ as r) :: tail when op = Token "*" || op = Token "/" ->
+                    base := if op = Token "*" then Mul (!base, r) else Div (!base, r);
+                    conv base tail
+                | _ -> failwith ""
+              in
+                conv ast tail;
+                Success ([Ast !ast], target, p)
+          | _ -> Failure)
+    | _ -> Failure
 
 let many_integers target position =
   match sequence [integer; many (sequence [token " "; integer])] target position with
