@@ -22,12 +22,14 @@ let non_zero_digit =
     ; token "8"
     ; token "9" ]
 
-let digit = choice [token "0"; non_zero_digit]
+let zero = token "0"
+
+let digit = choice [zero; non_zero_digit]
 
 let integer target position =
   match
     sequence
-      [option (choice [token "+"; token "-"]); non_zero_digit; many digit]
+      [option (choice [token "+"; token "-"]); choice [zero; sequence [non_zero_digit; many digit]]]
       target position
   with
   | Failure -> Failure
