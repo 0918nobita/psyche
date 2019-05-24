@@ -7,6 +7,7 @@ module ParserCombinator (AST : sig type ast end) :
     val choice : ('a -> 'b -> result) list -> 'a -> 'b -> result
     val sequence : (string -> int -> result) list -> string -> int -> result
     val option : (string -> int -> result) -> string -> int -> result
+    val lazy_parse : (unit -> string -> int -> result) -> string -> int -> result
   end
 =
   struct
@@ -68,4 +69,6 @@ module ParserCombinator (AST : sig type ast end) :
         if result = Failure
           then Success ([], target, position)
           else result
+
+    let lazy_parse parser = parser ()
   end
