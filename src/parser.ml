@@ -43,16 +43,22 @@ let integer target position =
         , target
         , p )
 
-let term target position =
-  match sequence [integer; many @@ sequence [choice [token "*"; token "/"]; integer]] target position with
+let rec factor () target position =
+  match choice [integer; sequence [token "("; lazy_parse expr; token ")"]] target position with
+    | Success ([Ast IntLiteral _], _, _) as result -> result
+    | Success ([Token "("; expr; Token ")"], _, p) -> Success ([expr], target, p)
+    | _ -> Failure
+
+and term target position =
+  match sequence [lazy_parse factor; many @@ sequence [choice [token "*"; token "/"]; lazy_parse factor]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
-          | [Ast IntLiteral _] as ast_list -> Success (ast_list, target, p)
-          | Ast (IntLiteral _ as lhs) :: op :: Ast (IntLiteral _ as rhs) :: tail when op = Token "*" || op = Token "/" ->
+          | [Ast _] as ast_list -> Success (ast_list, target, p)
+          | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when op = Token "*" || op = Token "/" ->
               let ast = ref @@ if op = Token "*" then Mul (lhs, rhs) else Div (lhs, rhs) in
               let rec conv base = function
                 | [] -> ()
-                | op :: Ast (IntLiteral _ as r) :: tail when op = Token "*" || op = Token "/" ->
+                | op :: Ast (_ as r) :: tail when op = Token "*" || op = Token "/" ->
                     base := if op = Token "*" then Mul (!base, r) else Div (!base, r);
                     conv base tail
                 | _ -> failwith ""
@@ -62,7 +68,7 @@ let term target position =
           | _ -> Failure)
     | _ -> Failure
 
-let expr target position =
+and expr () target position =
   match sequence [term; many @@ sequence [choice [token "+"; token "-"]; term]] target position with
     | Success (tokens, _, p) ->
         (match tokens with

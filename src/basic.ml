@@ -87,7 +87,7 @@ open Parser
 
 let () =
   let src = read @@ Sys.argv.(1) in
-    match expr src 0 with
+    match expr () src 0 with
       | Success ([Ast ast], _, p) when p = String.length src ->
           let
             out = open_out "out.wasm"
