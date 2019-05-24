@@ -56,31 +56,29 @@ let export =
   ; 0 (* export func index *)
   ]
 
-let code literals =
-  let
-    instructions = ref [] and
-    first = Binary.leb128_of_int @@ List.nth literals 0
+open Parser.AST
+
+let code ast =
+  let rec gen_instructions base = function
+    | IntLiteral n -> base := !base @ 65 :: Binary.leb128_of_int n 
+    | Add (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [106]
+    | Sub (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [107]
+    | Mul (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [108]
+    | Div (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [109]
   in
-    List.iteri
-      (fun i literal ->
-        if i != 0
-          then instructions := !instructions @
-            65 (* i32.const *)
-            :: Binary.leb128_of_int literal @ (* i32 literal *)
-            [ 106 (* i32.add *)
-            ])
-      literals;
-    let embedded_data_length = List.length first + List.length !instructions in
+  let
+    instructions = ref []
+  in
+    gen_instructions instructions ast;
+    let embedded_data_length = List.length !instructions in
       [ 10 (* section code *)
-      ; 5 + embedded_data_length (* section size *)
+      ; 4 + embedded_data_length (* section size *)
       ; 1 (* num functions *)
       ] @
-      [ 3 + embedded_data_length (* func body size *)
+      [ 2 + embedded_data_length (* func body size *)
       ] @
       [ 0 (* local decl count *)
-      ; 65 (* i32.const *)
       ] @
-      first @
       !instructions @
       [ 11 (* end *)
       ]
@@ -89,16 +87,10 @@ open Parser
 
 let () =
   let src = read @@ Sys.argv.(1) in
-  let rec literal_list_of_ast = function
-    | [] -> []
-    | Parser.Ast (IntLiteral n) :: tail -> n :: literal_list_of_ast tail
-    | _ -> failwith "Invalid format"
-  in
-    match many_integers src 0 with
-      | Success (ast, _, p) when p = String.length src ->
+    match expr src 0 with
+      | Success ([Ast ast], _, p) when p = String.length src ->
           let
-            out = open_out "out.wasm" and
-            literals = literal_list_of_ast ast
+            out = open_out "out.wasm"
           in
             write out @@
               header
@@ -106,6 +98,6 @@ let () =
               @ type_0
               @ function_header
               @ export
-              @ code literals;
+              @ code ast;
             close_out out
       | _ -> failwith "Syntax Error"
