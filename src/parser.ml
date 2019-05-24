@@ -80,9 +80,3 @@ let expr target position =
                 Success ([Ast !ast], target, p)
           | _ -> Failure)
     | _ -> Failure
-
-let many_integers target position =
-  match sequence [integer; many (sequence [token " "; integer])] target position with
-    | Success (ast_list, _, p) ->
-        Success (List.filter (function Token _ -> false | _ -> true) ast_list, target, p)
-    | _ -> Failure
