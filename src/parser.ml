@@ -1,7 +1,12 @@
-module AST : sig
-  type ast = IntLiteral of int | Add of ast * ast | Sub of ast * ast | Mul of ast * ast | Div of ast * ast
-end = struct
-  type ast = IntLiteral of int | Add of ast * ast | Sub of ast * ast | Mul of ast * ast | Div of ast * ast
+module AST = struct
+  type ast =
+    | IntLiteral of int
+    | Add of ast * ast
+    | Sub of ast * ast
+    | Mul of ast * ast
+    | Div of ast * ast
+    | And of ast * ast
+    | Or of ast * ast
 end
 
 open AST
@@ -44,7 +49,7 @@ let integer target position =
         , p )
 
 let rec factor () target position =
-  match choice [integer; sequence [token "("; lazy_parse expr; token ")"]] target position with
+  match choice [integer; sequence [token "("; lazy_parse logical_expr_or; token ")"]] target position with
     | Success ([Ast IntLiteral _], _, _) as result -> result
     | Success ([Token "("; expr; Token ")"], _, p) -> Success ([expr], target, p)
     | _ -> Failure
@@ -61,14 +66,14 @@ and term target position =
                 | op :: Ast (_ as r) :: tail when op = Token "*" || op = Token "/" ->
                     base := if op = Token "*" then Mul (!base, r) else Div (!base, r);
                     conv base tail
-                | _ -> failwith ""
+                | _ -> failwith "(term) Fatal Error"
               in
                 conv ast tail;
                 Success ([Ast !ast], target, p)
           | _ -> Failure)
     | _ -> Failure
 
-and expr () target position =
+and arithmetic_expr () target position =
   match sequence [term; many @@ sequence [choice [token "+"; token "-"]; term]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
@@ -80,7 +85,45 @@ and expr () target position =
                 | op :: Ast (_ as r) :: tail when op = Token "+" || op = Token "-" ->
                     base := if op = Token "+" then Add (!base, r) else Sub (!base, r);
                     conv base tail
-                | _ -> failwith ""
+                | _ -> failwith "(arithmetic_expr) Fatal Error"
+              in
+                conv ast tail;
+                Success ([Ast !ast], target, p)
+          | _ -> Failure)
+    | _ -> Failure
+
+and logical_expr_and () target position =
+  match sequence [lazy_parse arithmetic_expr; many @@ sequence [token "&&"; lazy_parse arithmetic_expr]] target position with
+    | Success (tokens, _, p) ->
+        (match tokens with
+          | [Ast _] as ast_list -> Success (ast_list, target, p)
+          | Ast (_ as lhs) :: Token "&&" :: Ast (_ as rhs) :: tail ->
+              let ast = ref @@ And (lhs, rhs) in
+              let rec conv base = function
+                | [] -> ()
+                | Token "&&" :: Ast (_ as r) :: tail ->
+                    base := And (!base, r);
+                    conv base tail
+                | _ -> failwith "(logical_expr_and) Fatal Error"
+              in
+                conv ast tail;
+                Success ([Ast !ast], target, p)
+          | _ -> Failure)
+    | _ -> Failure
+
+and logical_expr_or () target position =
+  match sequence [lazy_parse logical_expr_and; many @@ sequence [token "||"; lazy_parse logical_expr_and]] target position with
+    | Success (tokens, _, p) ->
+        (match tokens with
+          | [Ast _] as ast_list -> Success (ast_list, target, p)
+          | Ast (_ as lhs) :: Token "||" :: Ast (_ as rhs) :: tail ->
+              let ast = ref @@ Or (lhs, rhs) in
+              let rec conv base = function
+                | [] -> ()
+                | Token "||" :: Ast (_ as r) :: tail ->
+                    base := Or (!base, r);
+                    conv base tail
+                | _ -> failwith "(logical_expr_or) Fatal Error"
               in
                 conv ast tail;
                 Success ([Ast !ast], target, p)

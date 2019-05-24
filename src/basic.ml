@@ -65,6 +65,8 @@ let code ast =
     | Sub (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [107]
     | Mul (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [108]
     | Div (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [109]
+    | And (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [113]
+    | Or (lhs, rhs)  -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [114]
   in
   let
     instructions = ref []
@@ -87,7 +89,7 @@ open Parser
 
 let () =
   let src = read @@ Sys.argv.(1) in
-    match expr () src 0 with
+    match logical_expr_or () src 0 with
       | Success ([Ast ast], _, p) when p = String.length src ->
           let
             out = open_out "out.wasm"
