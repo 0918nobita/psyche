@@ -21,5 +21,6 @@ non_zero_digit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 zero = "0"
 digit = zero | non_zero_digit
 integer = ["+" | "-"], (zero | (non_zero_digit, { digit }))
-many_integers = integer, { " ", integer }
+term = integer, { ("*" | "/"), integer }
+expr = term, { ("+" | "-"), term }
 ```
