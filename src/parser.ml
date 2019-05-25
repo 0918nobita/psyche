@@ -17,24 +17,24 @@ open Parser
 
 let non_zero_digit =
   choice
-    [ token @@ Token "1"
-    ; token @@ Token "2"
-    ; token @@ Token "3"
-    ; token @@ Token "4"
-    ; token @@ Token "5"
-    ; token @@ Token "6"
-    ; token @@ Token "7"
-    ; token @@ Token "8"
-    ; token @@ Token "9" ]
+    [ atom @@ Token "1"
+    ; atom @@ Token "2"
+    ; atom @@ Token "3"
+    ; atom @@ Token "4"
+    ; atom @@ Token "5"
+    ; atom @@ Token "6"
+    ; atom @@ Token "7"
+    ; atom @@ Token "8"
+    ; atom @@ Token "9" ]
 
-let zero = token @@ Token "0"
+let zero = atom @@ Token "0"
 
 let digit = choice [zero; non_zero_digit]
 
 let integer target position =
   match
     sequence
-      [option (choice [token @@ Token "+"; token @@ Token "-"]); choice [zero; sequence [non_zero_digit; many digit]]]
+      [option (choice [atom @@ Token "+"; atom @@ Token "-"]); choice [zero; sequence [non_zero_digit; many digit]]]
       target position
   with
   | Failure -> Failure
@@ -49,13 +49,13 @@ let integer target position =
         , p )
 
 let rec factor () target position =
-  match choice [integer; sequence [token @@ Token "("; lazy_parse logical_expr_or; token @@ Token ")"]] target position with
+  match choice [integer; sequence [atom @@ Token "("; lazy_parse logical_expr_or; atom @@ Token ")"]] target position with
     | Success ([Ast IntLiteral _], _, _) as result -> result
     | Success ([Token "("; expr; Token ")"], _, p) -> Success ([expr], target, p)
     | _ -> Failure
 
 and term target position =
-  match sequence [lazy_parse factor; many @@ sequence [choice [token @@ Token "*"; token @@ Token "/"]; lazy_parse factor]] target position with
+  match sequence [lazy_parse factor; many @@ sequence [choice [atom @@ Token "*"; atom @@ Token "/"]; lazy_parse factor]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
           | [Ast _] as ast_list -> Success (ast_list, target, p)
@@ -74,7 +74,7 @@ and term target position =
     | _ -> Failure
 
 and arithmetic_expr target position =
-  match sequence [term; many @@ sequence [choice [token @@ Token "+"; token @@ Token "-"]; term]] target position with
+  match sequence [term; many @@ sequence [choice [atom @@ Token "+"; atom @@ Token "-"]; term]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
           | [Ast _] as ast_list -> Success (ast_list, target, p)
@@ -93,9 +93,9 @@ and arithmetic_expr target position =
     | _ -> Failure
 
 and logical_expr_and target position =
-  match sequence [arithmetic_expr; many @@ sequence [token @@ Token "&&"; arithmetic_expr]] target position with
-    | Success (tokens, _, p) ->
-        (match tokens with
+  match sequence [arithmetic_expr; many @@ sequence [atom @@ Token "&&"; arithmetic_expr]] target position with
+    | Success (atomss, _, p) ->
+        (match atomss with
           | [Ast _] as ast_list -> Success (ast_list, target, p)
           | Ast (_ as lhs) :: Token "&&" :: Ast (_ as rhs) :: tail ->
               let ast = ref @@ And (lhs, rhs) in
@@ -112,7 +112,7 @@ and logical_expr_and target position =
     | _ -> Failure
 
 and logical_expr_or () target position =
-  match sequence [logical_expr_and; many @@ sequence [token @@ Token "||"; logical_expr_and]] target position with
+  match sequence [logical_expr_and; many @@ sequence [atom @@ Token "||"; logical_expr_and]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
           | [Ast _] as ast_list -> Success (ast_list, target, p)

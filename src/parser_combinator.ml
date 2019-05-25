@@ -2,7 +2,7 @@ module ParserCombinator (AST : sig type ast end) :
   sig
     type ast = Token of string | Ast of AST.ast
     type result  = Success of (ast list * string * int) | Failure
-    val token : ast -> string -> int -> result
+    val atom : ast -> string -> int -> result
     val many : (string -> int -> result) -> string -> int -> result
     val choice : ('a -> 'b -> result) list -> 'a -> 'b -> result
     val sequence : (string -> int -> result) list -> string -> int -> result
@@ -20,7 +20,7 @@ module ParserCombinator (AST : sig type ast end) :
           then Some (String.sub str start len)
           else None
 
-    let token ast target position = match ast with
+    let atom ast target position = match ast with
       | Token name ->
           let length = String.length name in
             (match substr target position length with
