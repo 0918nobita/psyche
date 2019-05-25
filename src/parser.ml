@@ -73,7 +73,7 @@ and term target position =
           | _ -> Failure)
     | _ -> Failure
 
-and arithmetic_expr () target position =
+and arithmetic_expr target position =
   match sequence [term; many @@ sequence [choice [token "+"; token "-"]; term]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
@@ -92,8 +92,8 @@ and arithmetic_expr () target position =
           | _ -> Failure)
     | _ -> Failure
 
-and logical_expr_and () target position =
-  match sequence [lazy_parse arithmetic_expr; many @@ sequence [token "&&"; lazy_parse arithmetic_expr]] target position with
+and logical_expr_and target position =
+  match sequence [arithmetic_expr; many @@ sequence [token "&&"; arithmetic_expr]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
           | [Ast _] as ast_list -> Success (ast_list, target, p)
@@ -112,7 +112,7 @@ and logical_expr_and () target position =
     | _ -> Failure
 
 and logical_expr_or () target position =
-  match sequence [lazy_parse logical_expr_and; many @@ sequence [token "||"; lazy_parse logical_expr_and]] target position with
+  match sequence [logical_expr_and; many @@ sequence [token "||"; logical_expr_and]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
           | [Ast _] as ast_list -> Success (ast_list, target, p)
