@@ -1,4 +1,5 @@
 (executable
   (name basic)
   (public_name psyche)
-  (libraries base))
+  (libraries base)
+  (preprocess (pps ppx_jane)))
