@@ -70,18 +70,17 @@ let rec factor () target position =
     | _ -> Failure
 
 and term target position =
-  let mul = "*" and div = "/" in
-  let mul_tok = Token mul and div_tok = Token div in
-    match sequence [lazy_parse factor; many @@ sequence [choice [atom mul; atom div]; lazy_parse factor]] target position with
+  let operators = ["*"; "/"] in
+    match sequence [lazy_parse factor; many @@ sequence [choice_token operators; lazy_parse factor]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
             | [Ast _] as ast_list -> Success (ast_list, target, p)
-            | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when op = mul_tok || op = div_tok ->
-                let ast = ref @@ if op = mul_tok then Mul (lhs, rhs) else Div (lhs, rhs) in
+            | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when which_of operators op ->
+                let ast = ref @@ if op = Token "*" then Mul (lhs, rhs) else Div (lhs, rhs) in
                 let rec conv base = function
                   | [] -> ()
-                  | op :: Ast (_ as r) :: tail when op = mul_tok || op = div_tok ->
-                      base := if op = div_tok then Mul (!base, r) else Div (!base, r);
+                  | op :: Ast (_ as r) :: tail when which_of operators op ->
+                      base := if op = Token "/" then Mul (!base, r) else Div (!base, r);
                       conv base tail
                   | _ -> failwith "(term) Fatal Error"
                 in
@@ -91,18 +90,17 @@ and term target position =
       | _ -> Failure
 
 and arithmetic_expr target position =
-  let add = "+" and sub = "-" in
-  let add_tok = Token add and sub_tok = Token sub in
-    match sequence [term; many @@ sequence [choice [atom add; atom sub]; term]] target position with
+  let operators = ["+"; "-"] in
+    match sequence [term; many @@ sequence [choice_token operators; term]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
             | [Ast _] as ast_list -> Success (ast_list, target, p)
-            | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when op = add_tok || op = sub_tok ->
-                let ast = ref @@ if op = add_tok then Add (lhs, rhs) else Sub (lhs, rhs) in
+            | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when which_of operators op ->
+                let ast = ref @@ if op = Token "+" then Add (lhs, rhs) else Sub (lhs, rhs) in
                 let rec conv base = function
                   | [] -> ()
-                  | op :: Ast (_ as r) :: tail when op = add_tok || op = sub_tok ->
-                      base := if op = add_tok then Add (!base, r) else Sub (!base, r);
+                  | op :: Ast (_ as r) :: tail when which_of operators op ->
+                      base := if op = Token "-" then Add (!base, r) else Sub (!base, r);
                       conv base tail
                   | _ -> failwith "(arithmetic_expr) Fatal Error"
                 in
