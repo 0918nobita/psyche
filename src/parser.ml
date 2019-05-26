@@ -5,8 +5,15 @@ module AST = struct
     | Sub of ast * ast
     | Mul of ast * ast
     | Div of ast * ast
+    | Eq of ast * ast
+    | Ne of ast * ast
+    | Less of ast * ast
+    | LessE of ast * ast
+    | Greater of ast * ast
+    | GreaterE of ast * ast
     | And of ast * ast
     | Or of ast * ast
+    [@@deriving variants]
 end
 
 open AST
@@ -48,15 +55,23 @@ let integer target position =
         , target
         , p )
 
+let choice_token tokens = choice @@ List.map atom tokens
+
+let which_of tokens target =
+  List.fold_left
+    (fun acc next -> acc || next)
+    false
+    @@ List.map (fun tok -> Token tok = target) tokens
+
 let rec factor () target position =
   match choice [integer; sequence [atom "("; lazy_parse logical_expr_or; atom ")"]] target position with
-    | Success ([Ast IntLiteral _], _, _) as result -> result
+    | Success ([Ast IntLiteral _] as ast, _, p) -> Success (ast, target, p)
     | Success ([Token "("; expr; Token ")"], _, p) -> Success ([expr], target, p)
     | _ -> Failure
 
 and term target position =
   let mul = "*" and div = "/" in
-  let mul_tok = token mul and div_tok = token div in
+  let mul_tok = Token mul and div_tok = Token div in
     match sequence [lazy_parse factor; many @@ sequence [choice [atom mul; atom div]; lazy_parse factor]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
@@ -77,7 +92,7 @@ and term target position =
 
 and arithmetic_expr target position =
   let add = "+" and sub = "-" in
-  let add_tok = token add and sub_tok = token sub in
+  let add_tok = Token add and sub_tok = Token sub in
     match sequence [term; many @@ sequence [choice [atom add; atom sub]; term]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
@@ -96,18 +111,45 @@ and arithmetic_expr target position =
             | _ -> Failure)
       | _ -> Failure
 
+and comparison_expr target position =
+  let operators = ["=="; "!="; "<="; "<"; ">="; ">"] in
+  match sequence [arithmetic_expr; many @@ sequence [choice_token operators; arithmetic_expr]] target position with
+    | Success (tokens, _, p) ->
+        let ast_gen_of_op = function
+          | Token "==" -> eq
+          | Token "!=" -> ne
+          | Token "<" -> less
+          | Token "<=" -> lesse
+          | Token ">" -> greater
+          | Token ">=" -> greatere
+          | _ -> failwith "(comparison_expr) Fatal Error"
+        in
+        (match tokens with
+          | [Ast _] as ast_list -> Success (ast_list, target, p)
+          | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when which_of operators op ->
+              let ast = ref @@ ast_gen_of_op op lhs rhs in
+              let rec conv base = function
+                | [] -> ()
+                | op :: Ast (_ as r) :: tail ->
+                    base := ast_gen_of_op op !base r;
+                    conv base tail
+                | _ -> failwith "(comparison_expr) Fatal Error"
+              in
+                conv ast tail;
+                Success ([Ast !ast], target, p)
+          | _ -> Failure)
+    | _ -> Failure
+
 and logical_expr_and target position =
-  let and_op = "&&" in
-  let and_tok = token and_op in
-    match sequence [arithmetic_expr; many @@ sequence [atom and_op; arithmetic_expr]] target position with
-      | Success (atomss, _, p) ->
-          (match atomss with
+    match sequence [comparison_expr; many @@ sequence [atom "&&"; comparison_expr]] target position with
+      | Success (tokens, _, p) ->
+          (match tokens with
             | [Ast _] as ast_list -> Success (ast_list, target, p)
-            | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when op = and_tok ->
+            | Ast (_ as lhs) :: Token "&&" :: Ast (_ as rhs) :: tail ->
                 let ast = ref @@ And (lhs, rhs) in
                 let rec conv base = function
                   | [] -> ()
-                  | op :: Ast (_ as r) :: tail when op = and_tok ->
+                  | Token "&&" :: Ast (_ as r) :: tail ->
                       base := And (!base, r);
                       conv base tail
                   | _ -> failwith "(logical_expr_and) Fatal Error"
@@ -118,17 +160,15 @@ and logical_expr_and target position =
       | _ -> Failure
 
 and logical_expr_or () target position =
-  let or_op = "||" in
-  let or_tok = token or_op in
-    match sequence [logical_expr_and; many @@ sequence [atom or_op; logical_expr_and]] target position with
+    match sequence [logical_expr_and; many @@ sequence [atom "||"; logical_expr_and]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
             | [Ast _] as ast_list -> Success (ast_list, target, p)
-            | Ast (_ as lhs) :: op :: Ast (_ as rhs) :: tail when op = or_tok ->
+            | Ast (_ as lhs) :: Token "||" :: Ast (_ as rhs) :: tail ->
                 let ast = ref @@ Or (lhs, rhs) in
                 let rec conv base = function
                   | [] -> ()
-                  | op :: Ast (_ as r) :: tail when op = or_tok ->
+                  | Token "||" :: Ast (_ as r) :: tail ->
                       base := Or (!base, r);
                       conv base tail
                   | _ -> failwith "(logical_expr_or) Fatal Error"

@@ -66,7 +66,13 @@ let code ast =
     | Mul (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [108]
     | Div (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [109]
     | And (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [113]
-    | Or (lhs, rhs)  -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [114]
+    | Or (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [114]
+    | Eq (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [70]
+    | Ne (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [71]
+    | Less (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [72]
+    | LessE (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [76]
+    | Greater (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [74]
+    | GreaterE (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [78]
   in
   let
     instructions = ref []

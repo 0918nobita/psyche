@@ -1,6 +1,6 @@
 module ParserCombinator (AST : sig type ast end) :
   sig
-    type ast = Token of string | Ast of AST.ast [@@deriving variants]
+    type ast = Token of string | Ast of AST.ast
     type result  = Success of (ast list * string * int) | Failure
     val atom : string -> string -> int -> result
     val many : (string -> int -> result) -> string -> int -> result
@@ -11,7 +11,7 @@ module ParserCombinator (AST : sig type ast end) :
   end
 =
   struct
-    type ast = Token of string | Ast of AST.ast [@@deriving variants]
+    type ast = Token of string | Ast of AST.ast
     type result = Success of (ast list * string * int) | Failure
 
     let substr str start len =
