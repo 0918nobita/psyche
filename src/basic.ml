@@ -61,16 +61,46 @@ open Parser.AST
 let code ast =
   let rec gen_instructions base = function
     | IntLiteral n -> base := !base @ 65 :: Binary.leb128_of_int n 
-    | Add (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [106]
-    | Sub (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [107]
-    | Mul (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [108]
-    | Div (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [109]
-    | Eq (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [70]
-    | Ne (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [71]
-    | Less (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [72]
-    | LessE (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [76]
-    | Greater (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [74]
-    | GreaterE (lhs, rhs) -> gen_instructions base lhs; gen_instructions base rhs; base := !base @ [78]
+    | Add (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [106]
+    | Sub (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [107]
+    | Mul (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [108]
+    | Div (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [109]
+    | Eq (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [70]
+    | Ne (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [71]
+    | Less (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [72]
+    | LessE (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [76]
+    | Greater (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [74]
+    | GreaterE (lhs, rhs) ->
+        gen_instructions base lhs;
+        gen_instructions base rhs;
+        base := !base @ [78]
     | And (lhs, rhs) ->
         gen_instructions base lhs;
         base := !base @
