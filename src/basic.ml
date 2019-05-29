@@ -79,18 +79,30 @@ let code ast =
 open Parser
 
 let () =
-  let src = read @@ Sys.argv.(1) in
-    match logical_expr_or () src 0 with
-      | Success ([Ast ast], _, p) when p = String.length src ->
-          let
-            out = open_out "out.wasm"
-          in
-            write out @@
-              header
-              @ type_header
-              @ type_0
-              @ function_header
-              @ export
-              @ code ast;
-            close_out out
-      | _ -> failwith "Syntax Error"
+  if Array.length Sys.argv = 1
+    then
+      print_string @@
+        "    ____                  __\n" ^
+        "   / __ \\_______  _______/ /_  ___\n" ^
+        "  / /_/ / ___/ / / / ___/ __ \\/ _ \\\n" ^
+        " / ____(__  ) /_/ / /__/ / / /  __/\n" ^
+        "/_/   /____/\\__, /\\___/_/ /_/\\___/\n" ^
+        "           /____/\n\n" ^
+        "A WASM friendly lightweight programming language\n" ^
+        "Version 0.0.1\n"
+    else
+      let src = read @@ Sys.argv.(1) in
+      match logical_expr_or () src 0 with
+        | Success ([Ast ast], _, p) when p = String.length src ->
+            let
+              out = open_out "out.wasm"
+            in
+              write out @@
+                header
+                @ type_header
+                @ type_0
+                @ function_header
+                @ export
+                @ code ast;
+              close_out out
+        | _ -> failwith "Syntax Error"
