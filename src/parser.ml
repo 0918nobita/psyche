@@ -100,7 +100,7 @@ and arithmetic_expr target position =
                 let rec conv base = function
                   | [] -> ()
                   | op :: Ast (_ as r) :: tail when which_of operators op ->
-                      base := if op = Token "-" then Add (!base, r) else Sub (!base, r);
+                      base := if op = Token "-" then Sub (!base, r) else Sub (!base, r);
                       conv base tail
                   | _ -> failwith "(arithmetic_expr) Fatal Error"
                 in
