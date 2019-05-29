@@ -1,8 +1,14 @@
 (module
-  (func (export "main") (result i32)
-    (if (result i32) (i32.eq (i32.const 2) (i32.const 1))
-      (then i32.const 3)
-      (else
-        (if (result i32) (i32.le_s (i32.const 3) (i32.const 4))
-          (then i32.const 5)
-          (else i32.const 6))))))
+  (func (export "main") (result i32) (local i32) (local i32)
+    i32.const 1
+    tee_local 0
+    i32.eqz
+    (if (result i32)
+      (then
+        i32.const 2
+        tee_local 1
+        i32.eqz
+        (if (result i32)
+          (then i32.const 3)
+          (else get_local 1)))
+      (else get_local 0))))
