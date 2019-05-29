@@ -70,8 +70,8 @@ let code ast =
         [0 (* local decl count *)]) @
     instructions in
   let body = (Binary.leb128_of_int @@ List.length decl) @ decl in
-    10 ::
-    Binary.leb128_of_int (1 + List.length body) @
+    10 :: (* section code *)
+    Binary.leb128_of_int (1 + List.length body) @ (* section size *)
     [ 1 (* num functions *)
     ] @
     body
