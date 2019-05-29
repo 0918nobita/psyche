@@ -56,84 +56,25 @@ let export =
   ; 0 (* export func index *)
   ]
 
-open Parser.AST
-
 let code ast =
-  let rec gen_instructions base = function
-    | IntLiteral n -> base := !base @ 65 :: Binary.leb128_of_int n 
-    | Add (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [106]
-    | Sub (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [107]
-    | Mul (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [108]
-    | Div (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [109]
-    | Eq (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [70]
-    | Ne (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [71]
-    | Less (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [72]
-    | LessE (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [76]
-    | Greater (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [74]
-    | GreaterE (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [78]
-    | And (lhs, rhs) ->
-        gen_instructions base lhs;
-        base := !base @
-          [ 69 (* i32.eqz *)
-          ; 4 (* if *)
-          ; 127 (* i32 *)
-          ; 65 (* i32.const *)
-          ; 0 (* i32 literal *)
-          ; 5 (* else *)
-          ];
-        gen_instructions base rhs;
-        base := !base @ [11 (* end *)]
-    | Or (lhs, rhs) ->
-        gen_instructions base lhs;
-        gen_instructions base rhs;
-        base := !base @ [114 (* i32.or *)]
-  in
-  let
-    instructions = ref []
-  in
-    gen_instructions instructions ast;
-    let embedded_data_length = List.length !instructions in
-      [ 10 (* section code *)
-      ; 4 + embedded_data_length (* section size *)
-      ; 1 (* num functions *)
-      ] @
-      [ 2 + embedded_data_length (* func body size *)
-      ] @
-      [ 0 (* local decl count *)
-      ] @
-      !instructions @
-      [ 11 (* end *)
-      ]
+  let max = ref (-1) in
+  let instructions = Ir.instructions_of_ir (Ir.ir_of_ast ast, -1, max) @ [ 11 (* end *)] in
+  let local_decl_count = !max + 1 in
+  let decl =
+    (if local_decl_count > 0
+      then
+        1 :: (* local decl count *)
+        Binary.leb128_of_int local_decl_count @ (* local type count *)
+        [127 (* i32 *)]
+      else
+        [0 (* local decl count *)]) @
+    instructions in
+  let body = (Binary.leb128_of_int @@ List.length decl) @ decl in
+    10 ::
+    Binary.leb128_of_int (1 + List.length body) @
+    [ 1 (* num functions *)
+    ] @
+    body
 
 open Parser
 
