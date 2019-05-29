@@ -32,6 +32,7 @@ let rec ir_of_ast = function
   | LessE (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Le]
   | And (lhs, rhs) -> ir_of_ast lhs @ [I32Eqz; I32If ([I32Const 0], ir_of_ast rhs)]
   | Or (lhs, rhs) -> ir_of_ast lhs @ [I32Local [TeeLocal 0; I32Eqz; I32If (ir_of_ast rhs, [GetLocal 0])]]
+  | If (cond, t, e) -> ir_of_ast cond @ [I32Eqz; I32If (ir_of_ast e, ir_of_ast t)]
 
 let rec instructions_of_ir (irs, current, max) = match irs with
   | [] -> []
