@@ -72,9 +72,27 @@ let which_of tokens target =
     @@ List.map (fun tok -> Token tok = target) tokens
 
 let rec factor () target position =
-  match choice [integer; sequence [atom "("; spaces_opt; lazy_parse if_expr; spaces_opt; atom ")"]] target position with
-    | Success ([Ast IntLiteral _] as ast, _, p) -> Success (ast, target, p)
+  match choice [integer; if_expr; sequence [atom "("; spaces_opt; lazy_parse logical_expr_or; spaces_opt; atom ")"]] target position with
+    | Success ([Ast _] as ast, _, p) -> Success (ast, target, p)
     | Success ([Token "("; expr; Token ")"], _, p) -> Success ([expr], target, p)
+    | _ -> Failure
+
+and if_expr target position =
+  match sequence
+    [ atom "if"
+    ; spaces
+    ; lazy_parse logical_expr_or
+    ; spaces
+    ; atom "then"
+    ; spaces
+    ; lazy_parse logical_expr_or
+    ; spaces
+    ; atom "else"
+    ; spaces
+    ; lazy_parse logical_expr_or
+    ] target position with
+    | Success ([Token "if"; Ast (_ as cond); Token "then"; Ast (_ as t); Token "else"; Ast (_ as e)], _, p) ->
+        Success ([Ast (If (cond, t, e))], target, p)
     | _ -> Failure
 
 and term target position =
@@ -165,7 +183,7 @@ and logical_expr_and target position =
           | _ -> Failure)
     | _ -> Failure
 
-and logical_expr_or target position =
+and logical_expr_or () target position =
   match sequence [logical_expr_and; many @@ sequence [spaces_opt; atom "||"; spaces_opt; logical_expr_and]] target position with
     | Success (tokens, _, p) ->
         (match tokens with
@@ -184,25 +202,4 @@ and logical_expr_or target position =
           | _ -> Failure)
     | _ -> Failure
 
-and if_expr () target position =
-  match choice
-    [logical_expr_or; sequence
-      [ atom "if"
-      ; spaces
-      ; logical_expr_or
-      ; spaces
-      ; atom "then"
-      ; spaces
-      ; logical_expr_or
-      ; spaces
-      ; atom "else"
-      ; spaces
-      ; logical_expr_or
-      ]
-    ] target position with
-    | Success ([Ast _] as ast_list, _, p) -> Success (ast_list, target, p)
-    | Success ([Token "if"; Ast (_ as cond); Token "then"; Ast (_ as t); Token "else"; Ast (_ as e)], _, p) ->
-        Success ([Ast (If (cond, t, e))], target, p)
-    | _ -> Failure
-
-let program = sequence [spaces_opt; lazy_parse if_expr; spaces_opt]
+let program = sequence [spaces_opt; lazy_parse logical_expr_or; spaces_opt]
