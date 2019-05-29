@@ -38,6 +38,13 @@ let zero = atom "0"
 
 let digit = choice [zero; non_zero_digit]
 
+let spaces target position =
+  match sequence [atom " "; many @@ atom " "] target position with
+    | Success (_, _, p) -> Success ([], target, p)
+    | _ -> Failure
+
+let spaces_opt = option spaces
+
 let integer target position =
   match
     sequence
@@ -64,14 +71,14 @@ let which_of tokens target =
     @@ List.map (fun tok -> Token tok = target) tokens
 
 let rec factor () target position =
-  match choice [integer; sequence [atom "("; lazy_parse logical_expr_or; atom ")"]] target position with
+  match choice [integer; sequence [atom "("; spaces_opt; lazy_parse logical_expr_or; spaces_opt; atom ")"]] target position with
     | Success ([Ast IntLiteral _] as ast, _, p) -> Success (ast, target, p)
     | Success ([Token "("; expr; Token ")"], _, p) -> Success ([expr], target, p)
     | _ -> Failure
 
 and term target position =
   let operators = ["*"; "/"] in
-    match sequence [lazy_parse factor; many @@ sequence [choice_token operators; lazy_parse factor]] target position with
+    match sequence [lazy_parse factor; many @@ sequence [spaces_opt; choice_token operators; spaces_opt; lazy_parse factor]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
             | [Ast _] as ast_list -> Success (ast_list, target, p)
@@ -91,7 +98,7 @@ and term target position =
 
 and arithmetic_expr target position =
   let operators = ["+"; "-"] in
-    match sequence [term; many @@ sequence [choice_token operators; term]] target position with
+    match sequence [term; many @@ sequence [spaces_opt; choice_token operators; spaces_opt; term]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
             | [Ast _] as ast_list -> Success (ast_list, target, p)
@@ -111,7 +118,7 @@ and arithmetic_expr target position =
 
 and comparison_expr target position =
   let operators = ["=="; "!="; "<="; "<"; ">="; ">"] in
-  match sequence [arithmetic_expr; many @@ sequence [choice_token operators; arithmetic_expr]] target position with
+  match sequence [arithmetic_expr; many @@ sequence [spaces_opt; choice_token operators; spaces_opt; arithmetic_expr]] target position with
     | Success (tokens, _, p) ->
         let ast_gen_of_op = function
           | Token "==" -> eq
@@ -139,7 +146,7 @@ and comparison_expr target position =
     | _ -> Failure
 
 and logical_expr_and target position =
-    match sequence [comparison_expr; many @@ sequence [atom "&&"; comparison_expr]] target position with
+    match sequence [comparison_expr; many @@ sequence [spaces_opt; atom "&&"; spaces_opt; comparison_expr]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
             | [Ast _] as ast_list -> Success (ast_list, target, p)
@@ -158,7 +165,7 @@ and logical_expr_and target position =
       | _ -> Failure
 
 and logical_expr_or () target position =
-    match sequence [logical_expr_and; many @@ sequence [atom "||"; logical_expr_and]] target position with
+    match sequence [logical_expr_and; many @@ sequence [spaces_opt; atom "||"; spaces_opt; logical_expr_and]] target position with
       | Success (tokens, _, p) ->
           (match tokens with
             | [Ast _] as ast_list -> Success (ast_list, target, p)
@@ -175,3 +182,5 @@ and logical_expr_or () target position =
                   Success ([Ast !ast], target, p)
             | _ -> Failure)
       | _ -> Failure
+
+let program = sequence [spaces_opt; lazy_parse logical_expr_or; spaces_opt]

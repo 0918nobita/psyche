@@ -92,7 +92,7 @@ let () =
         "Version 0.0.1\n"
     else
       let src = read @@ Sys.argv.(1) in
-      match logical_expr_or () src 0 with
+      match program src 0 with
         | Success ([Ast ast], _, p) when p = String.length src ->
             let
               out = open_out "out.wasm"
