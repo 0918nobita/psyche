@@ -20,19 +20,32 @@ type ir =
 
 let rec ir_of_ast = function
   | IntLiteral n -> [I32Const n]
-  | Add (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Add]
-  | Sub (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Sub]
-  | Mul (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Mul]
-  | Div (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32DivS]
-  | Eq (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Eq]
-  | Ne (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Ne]
-  | Greater (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Gt]
-  | GreaterE (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Ge]
-  | Less (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Lt]
-  | LessE (lhs, rhs) -> ir_of_ast lhs @ ir_of_ast rhs @ [I32Le]
-  | And (lhs, rhs) -> ir_of_ast lhs @ [I32Eqz; I32If ([I32Const 0], ir_of_ast rhs)]
-  | Or (lhs, rhs) -> ir_of_ast lhs @ [I32Local [TeeLocal 0; I32Eqz; I32If (ir_of_ast rhs, [GetLocal 0])]]
-  | If (cond, t, e) -> ir_of_ast cond @ [I32Eqz; I32If (ir_of_ast e, ir_of_ast t)]
+  | Add (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Add]
+  | Sub (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Sub]
+  | Mul (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Mul]
+  | Div (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32DivS]
+  | Eq (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Eq]
+  | Ne (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Ne]
+  | Greater (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Gt]
+  | GreaterE (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Ge]
+  | Less (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Lt]
+  | LessE (lhs, rhs) ->
+      ir_of_ast lhs @ ir_of_ast rhs @ [I32Le]
+  | And (lhs, rhs) ->
+      ir_of_ast lhs @ [I32Eqz; I32If ([I32Const 0], ir_of_ast rhs)]
+  | Or (lhs, rhs) ->
+      ir_of_ast lhs @ [I32Local [TeeLocal 0; I32Eqz; I32If (ir_of_ast rhs, [GetLocal 0])]]
+  | If (cond, t, e) ->
+      ir_of_ast cond @ [I32Eqz; I32If (ir_of_ast e, ir_of_ast t)]
 
 let rec instructions_of_ir (irs, current, max) = match irs with
   | [] -> []
