@@ -47,9 +47,24 @@ program = logical_expr_or
 
 ### Constants
 
+#### Code example
+
 ```text
 const a = if 1 + 2 * 3 > 5 then 7 else 9
 ```
+
+#### Syntax
+
+```text
+"const", symbol, "=", logical_expr_or
+```
+
+#### Semantics
+
+This statement defines a constant named ``symbol``.  
+The value is assigned when the program is initialized.  
+Reassigning to the constant is forbidden.  
+This feature will be implemented using global variables of WASM.
 
 ### Let Expressions
 
