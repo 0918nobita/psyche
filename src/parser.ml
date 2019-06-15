@@ -33,7 +33,8 @@ let non_zero_digit =
     ; atom "6"
     ; atom "7"
     ; atom "8"
-    ; atom "9" ]
+    ; atom "9"
+    ]
 
 let zero = atom "0"
 
