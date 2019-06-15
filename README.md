@@ -30,3 +30,10 @@ logical_expr_or = logical_expr_and, { "||", logical_expr_and }
 if_expr = "if", logical_expr_or, "then", logical_expr_or, "else", logical_expr_or
 program = logical_expr_or
 ```
+
+## Code Example
+
+```text
+1 + 2 * if 3 < 0 then 4 else 5 + 6
+```
+
