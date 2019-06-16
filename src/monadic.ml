@@ -12,7 +12,7 @@ let token tok =
   let length = String.length tok in
     MParser (fun src -> match substr src 0 length with
       | Some cut when cut = tok ->
-          [(cut, String.sub src length (length - String.length cut + 1))]
+          [(cut, String.sub src length (String.length src - length))]
       | _ -> [])
 
 let ( >>= ) p f =
