@@ -15,6 +15,11 @@ let token tok =
           [(cut, String.sub src length (String.length src - length))]
       | _ -> [])
 
+(* Function Composition *)
+let ( <.> ) f g x = f @@ g x
+
+let concatMap f = List.(concat <.> map f)
+
 let ( >>= ) p f =
   MParser (fun src ->
     parse p src
