@@ -23,6 +23,5 @@ let concatMap f = List.(concat <.> map f)
 let ( >>= ) p f =
   MParser (fun src ->
     parse p src
-      |> List.map (fun (a, str) -> parse (f a) str)
-      |> List.concat)
+      |> concatMap (fun (a, str) -> parse (f a) str))
 
