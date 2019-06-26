@@ -116,3 +116,7 @@ fn add3(n: i32): i32 = add(3, n)
 ```
 pub fn double(n: i32): i32 = 2 * n
 ```
+
+### Dependent Types
+
+inspired by Idris
