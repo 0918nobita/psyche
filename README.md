@@ -79,14 +79,6 @@ in
   4 + n
 ```
 
-### Progn
-
-Use ``;`` as delimiter of multiple expressions evaluated in order.
-
-```text
-1 + 2; 3 - 4; 5 * 6
-```
-
 ### Functions
 
 #### Function definitions
