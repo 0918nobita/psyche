@@ -11,11 +11,11 @@ let return x = MParser x
 let token tok =
   let length = String.length tok in
     return (fun src ->
-      match substr src 0 length with
-        | Some cut when cut = tok ->
-            [(cut, String.sub src length (String.length src - length))]
-        | _ ->
-            [] )
+        match substr src 0 length with
+          | Some cut when cut = tok ->
+              [(cut, String.sub src length (String.length src - length))]
+          | _ ->
+              [] )
 
 (* Function Composition *)
 let ( <.> ) f g x = f @@ g x
@@ -24,7 +24,9 @@ let concatMap f = List.(concat <.> map f)
 
 let ( >>= ) p f =
   return
-    (fun src -> parse p src |> concatMap (fun (a, str) -> parse (f a) str))
+    (fun src ->
+       parse p src
+       |> concatMap (fun (a, str) -> parse (f a) str))
 
 let ( >> ) m f = m >>= fun _ -> f
 

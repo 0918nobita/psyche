@@ -9,4 +9,4 @@ strict_with = always
 strict_else = always
 strict_comments = true
 align_ops = true
-align_params = true
+align_params = auto
