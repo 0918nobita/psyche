@@ -31,3 +31,10 @@ let ( >>= ) p f =
 let ( >> ) m f = m >>= fun _ -> f
 
 let ( <*> ) fs xs = fs >>= fun f -> xs >>= fun x -> return (f x)
+
+let mparser =
+  token "a"
+  >>= fun cut ->
+  return (fun src ->
+      let result = parse (token "b") src in
+        List.map (fun (a, str) -> (cut ^ a, str)) result)
