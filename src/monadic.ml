@@ -38,7 +38,7 @@ let ( <*> ) precede succeed =
                     parse succeed str
                     |> List.map (fun (ast, str') -> (f ast, str'))))
 
-let ( <*> ) = fmap
+let ( <$> ) = fmap
 
 
 (* Monad *)
@@ -57,6 +57,18 @@ let ( >>= ) p f =
   like sequencing operators (such as the semicolon) in imperative languages
 *)
 let ( >> ) m f = m >>= fun _ -> f
+
+
+(*
+  Alternative - A monoid on applicative functors
+  MonadPlus - Monads that also support choice and failure
+*)
+
+(** The identity of '<|>' *)
+let empty = MParser (fun _ -> [])
+
+(** An associative binary operation *)
+let ( <|> ) p q = MParser (fun src -> parse p src @ parse q src)
 
 
 let mparser =
