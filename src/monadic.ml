@@ -8,6 +8,8 @@ let substr str start len =
       then Some (String.sub str start len)
       else None
 
+let return x = MParser x
+
 let token tok =
   let length = String.length tok in
     MParser (fun src -> match substr src 0 length with
