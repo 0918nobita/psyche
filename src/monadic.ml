@@ -26,3 +26,6 @@ let ( >>= ) p f =
   return
     (fun src -> parse p src |> concatMap (fun (a, str) -> parse (f a) str))
 
+let ( >> ) m f = m >>= fun _ -> f
+
+let ( <*> ) fs xs = fs >>= fun f -> xs >>= fun x -> return (f x)
