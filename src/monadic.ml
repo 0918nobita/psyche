@@ -21,6 +21,13 @@ let ( <.> ) f g x = f @@ g x
 let concatMap f = List.(concat <.> map f)
 
 
+(* Functor *)
+
+let fmap f p =
+  MParser (fun src ->
+    List.map (fun (a, str) -> (f a str)) @@ (parse p) src)
+
+
 (* Applicative *)
 
 (** Sequential application *)
@@ -30,6 +37,8 @@ let ( <*> ) precede succeed =
                 |> concatMap (fun (f, str) ->
                     parse succeed str
                     |> List.map (fun (ast, str') -> (f ast, str'))))
+
+let ( <*> ) = fmap
 
 
 (* Monad *)
