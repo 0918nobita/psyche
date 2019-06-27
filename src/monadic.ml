@@ -20,19 +20,35 @@ let ( <.> ) f g x = f @@ g x
 
 let concatMap f = List.(concat <.> map f)
 
-let ( >>= ) p f =
-  MParser
-    (fun src -> parse p src
-                |> concatMap (fun (a, str) -> parse (f a) str))
 
-let ( >> ) m f = m >>= fun _ -> f
+(* Applicative *)
 
+(** Sequential application *)
 let ( <*> ) precede succeed =
   MParser
     (fun src -> parse precede src
                 |> concatMap (fun (f, str) ->
                     parse succeed str
                     |> List.map (fun (ast, str') -> (f ast, str'))))
+
+
+(* Monad *)
+
+(**
+  Sequentially compose two actions,
+  passing any value produced by the first as a argumet to the second.
+*)
+let ( >>= ) p f =
+  MParser
+    (fun src -> parse p src
+                |> concatMap (fun (a, str) -> parse (f a) str))
+
+(**
+  Sequentially compose two actions, discarding any value produced by the first,
+  like sequencing operators (such as the semicolon) in imperative languages
+*)
+let ( >> ) m f = m >>= fun _ -> f
+
 
 let mparser =
   token "a"
