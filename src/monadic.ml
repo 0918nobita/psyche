@@ -65,17 +65,17 @@ module Parser = struct
   let ( >> ) m f = m >>= fun _ -> f
 
 
-  (*
-    Alternative - A monoid on applicative functors
-    MonadPlus - Monads that also support choice and failure
-  *)
+  (* Alternative - A monoid on applicative functors *)
 
   (** The identity of '<|>' *)
   let empty = MParser (fun _ -> [])
-  let mzero = empty
 
   (** An associative binary operation *)
   let ( <|> ) p q = MParser (fun src -> parse p src @ parse q src)
+
+
+  (* MonadPlus - Monads that also support choice and failure *)
+  let mzero = empty
   let mplus = (<|>)
 end
 
