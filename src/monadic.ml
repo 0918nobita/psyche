@@ -96,3 +96,5 @@ let satisfy f = Parser.(item >>= (fun ast -> if f ast then return ast else mzero
 let char c = satisfy ((==) c)
 
 let oneOf cs = satisfy (String.contains cs)
+
+let d1 = Parser.(int_of_char <$> oneOf "123456789")
