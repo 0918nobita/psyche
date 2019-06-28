@@ -72,9 +72,11 @@ module Parser = struct
 
   (** The identity of '<|>' *)
   let empty = MParser (fun _ -> [])
+  let mzero = empty
 
   (** An associative binary operation *)
   let ( <|> ) p q = MParser (fun src -> parse p src @ parse q src)
+  let mplus = (<|>)
 end
 
 
