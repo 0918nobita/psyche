@@ -32,6 +32,8 @@ module Parser = struct
 
   (* Applicative *)
 
+  let pure ast = MParser (fun src -> [(ast, src)])
+
   (** Sequential application *)
   let ( <*> ) precede succeed =
     MParser
@@ -44,6 +46,8 @@ module Parser = struct
 
 
   (* Monad *)
+
+  let return = pure
 
   (**
     Sequentially compose two actions,
