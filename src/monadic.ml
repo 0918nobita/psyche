@@ -94,3 +94,5 @@ let item = Parser.(MParser (function
 let satisfy f = Parser.(item >>= (fun ast -> if f ast then return ast else mzero))
 
 let char c = satisfy ((==) c)
+
+let oneOf cs = satisfy (String.contains cs)
