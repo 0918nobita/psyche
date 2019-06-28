@@ -98,3 +98,5 @@ let char c = satisfy ((==) c)
 let oneOf cs = satisfy (String.contains cs)
 
 let d1 = Parser.(int_of_char <$> oneOf "123456789")
+
+let d0 = Parser.(d1 <|> (int_of_char <$> char '0'))
