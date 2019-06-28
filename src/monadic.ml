@@ -92,3 +92,5 @@ let item = Parser.(MParser (function
   | s  -> String.([(get (sub s 0 1) 0, sub s 1 (length s - 1))])))
 
 let satisfy f = Parser.(item >>= (fun ast -> if f ast then return ast else mzero))
+
+let char c = satisfy ((==) c)
