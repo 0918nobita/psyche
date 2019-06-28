@@ -80,3 +80,7 @@ let mparser =
   MParser (fun src ->
       let result = parse (token "b") src in
         List.map (fun (a, str) -> (cut ^ a, str)) result))
+
+let item = Parser.(MParser (function
+  | "" -> []
+  | s  -> String.([(get (sub s 0 1) 0, sub s 1 (length s - 1))])))
