@@ -45,13 +45,6 @@ let ( <|> ) p q = MParser (fun src -> parse p src @ parse q src)
 
 let liftA2 f x = (<*>) (f <$> x)
 
-let mparser =
-  token "a"
-  >>= fun cut ->
-  MParser (fun src ->
-      let result = parse (token "b") src in
-        List.map (fun (a, str) -> (cut ^ a, str)) result)
-
 let item = MParser (function
   | "" -> []
   | s  -> String.([(get (sub s 0 1) 0, sub s 1 (length s - 1))]))
