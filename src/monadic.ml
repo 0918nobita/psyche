@@ -66,7 +66,10 @@ let d1 = int_of_char <$> oneOf "123456789"
 
 let d0 = d1 <|> (int_of_char <$> char '0')
 
-let rec
-  many p  = some p <|> mzero
-and
-  some p = (List.cons) <$> p <*> many p >>= return
+let option default p = p <|> return default
+
+let (<~>) p q = p >>= fun r -> q >>= fun rs -> return (r :: rs)
+
+let rec many p = option [] (p >>= fun r -> many p >>= fun rs -> return (r :: rs))
+
+let some p = lazy (p <~> many p)
