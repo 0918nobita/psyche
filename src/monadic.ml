@@ -87,3 +87,10 @@ let addop =
     sub = char '-' >> return (-)
   in
     add <|> sub
+
+let mulop =
+  let
+    mul = char '*' >> return ( * ) and
+    div = char '/' >> return (/)
+  in
+    mul <|> div
