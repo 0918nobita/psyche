@@ -11,7 +11,7 @@ make build
 ## Test
 
 ```bash
-dune exec psyche test/example.psy
+dune exec psyche make test/example.psy
 ```
 
 ## EBNF
