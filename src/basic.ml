@@ -114,6 +114,12 @@ let () =
         "A WASM friendly lightweight programming language\n" ^
         "Version 0.0.1\n"
     else
-      if Sys.argv.(1) = "repl"
-        then repl ()
-        else compile @@ read @@ Sys.argv.(1)
+      match Sys.argv.(1) with
+        | "repl" ->
+            repl ()
+        | "make" ->
+            if Array.length Sys.argv >= 3
+              then compile @@ read @@ Sys.argv.(2)
+              else (print_endline "Source files were not provided"; exit (-1))
+        | str ->
+            (print_endline @@ "Invalid subcommand: " ^ str; exit (-1))
