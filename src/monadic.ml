@@ -90,3 +90,8 @@ let integer =
     toNum x acc = x * 10 + acc
   in
     (List.fold_left toNum 0) <$> Lazy.force @@ some digit
+
+let chain1 p op =
+  let rec rest a = ((fun f b -> f a b) <$> op <*> p >>= rest) <|> return a in
+    p >>= rest
+
