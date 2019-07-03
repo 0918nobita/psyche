@@ -63,24 +63,33 @@ let rec many p = option [] (p >>= fun r -> many p >>= fun rs -> return (r :: rs)
 
 let some p = lazy (p <~> many p)
 
+type ast =
+  | IntLiteral of int
+  | Plus of ast
+  | Minus of ast
+  | Add of ast * ast
+  | Sub of ast * ast
+  | Mul of ast * ast
+  | Div of ast * ast
+
 let unary =
   let
-    plus = char '+' >> return (~+) and
-    minus = char '-' >> return (~-)
+    plus = char '+' >> return (fun ast -> Plus ast) and
+    minus = char '-' >> return (fun ast -> Minus ast)
   in
     plus <|> minus <|> return (fun x -> x)
 
 let addop =
   let
-    add = char '+' >> return (+) and
-    sub = char '-' >> return (-)
+    add = char '+' >> return (fun lhs rhs -> Add (lhs, rhs)) and
+    sub = char '-' >> return (fun lhs rhs -> Sub (lhs, rhs))
   in
     add <|> sub
 
 let mulop =
   let
-    mul = char '*' >> return ( * ) and
-    div = char '/' >> return (/)
+    mul = char '*' >> return (fun lhs rhs -> Mul (lhs, rhs)) and
+    div = char '/' >> return (fun lhs rhs -> Div (lhs, rhs))
   in
     mul <|> div
 
@@ -89,7 +98,7 @@ let integer =
     digit = (fun c -> c - 48) <.> int_of_char <$> oneOf "0123456789" and
     toNum x acc = x * 10 + acc
   in
-    (List.fold_left toNum 0) <$> Lazy.force @@ some digit
+    (fun n -> IntLiteral n) <.> (List.fold_left toNum 0) <$> Lazy.force @@ some digit
 
 let chain1 p op =
   let rec rest a = ((fun f b -> f a b) <$> op <*> p >>= rest) <|> return a in
