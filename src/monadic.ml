@@ -80,3 +80,10 @@ let unary =
     minus = char '-' >> return (~-)
   in
     plus <|> minus <|> return (fun x -> x)
+
+let addop =
+  let
+    add = char '+' >> return (+) and
+    sub = char '-' >> return (-)
+  in
+    add <|> sub
