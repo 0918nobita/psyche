@@ -95,3 +95,12 @@ let chain1 p op =
   let rec rest a = ((fun f b -> f a b) <$> op <*> p >>= rest) <|> return a in
     p >>= rest
 
+let rec factor () =
+  MParser (fun src ->
+    match parse integer src with
+      | [] -> parse (char '(' >> (expr () >>= (fun c -> char ')' >> return c))) src
+      | n  -> n)
+
+and term () = chain1 (factor ()) mulop
+
+and expr () = (fun op n -> op n) <$> unary <*> chain1 (term ()) addop
