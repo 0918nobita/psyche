@@ -73,3 +73,10 @@ let (<~>) p q = p >>= fun r -> q >>= fun rs -> return (r :: rs)
 let rec many p = option [] (p >>= fun r -> many p >>= fun rs -> return (r :: rs))
 
 let some p = lazy (p <~> many p)
+
+let unary =
+  let
+    plus = char '+' >> return (~+) and
+    minus = char '-' >> return (~-)
+  in
+    plus <|> minus <|> return (fun x -> x)
