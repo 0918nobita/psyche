@@ -19,7 +19,7 @@ end
 
 open AST
 
-module Parser = Parser_combinator.ParserCombinator (AST)
+module Parser = Parser_combinator_old.ParserCombinator (AST)
 
 open Parser
 
