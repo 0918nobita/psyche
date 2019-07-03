@@ -62,8 +62,15 @@ let spaces = Lazy.force @@ some @@ oneOf " \t\n"
 let spaces_opt = many @@ oneOf " \t\n"
 
 let chain1 p op =
-  let rec rest a = (spaces_opt >> ((fun f b -> f a b) <$> op <*> (spaces_opt >> p) >>= rest)) <|> return a in
-    p >>= rest
+  let rec rest a =
+      (spaces_opt
+      >> ((fun f b -> f a b) <$> op <*> (spaces_opt >> p) >>= rest))
+    <|>
+      return a
+  in
+    p
+    >>= rest
+    >>= (fun ast -> spaces_opt >> return ast)
 
 let rec factor () =
   let if_expr = MParser (fun src ->
