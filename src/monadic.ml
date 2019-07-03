@@ -62,10 +62,6 @@ let char c = satisfy ((==) c)
 
 let oneOf cs = satisfy (String.contains cs)
 
-let d1 = int_of_char <$> oneOf "123456789"
-
-let d0 = d1 <|> (int_of_char <$> char '0')
-
 let option default p = p <|> return default
 
 let (<~>) p q = p >>= fun r -> q >>= fun rs -> return (r :: rs)
@@ -94,3 +90,10 @@ let mulop =
     div = char '/' >> return (/)
   in
     mul <|> div
+
+let integer =
+  let
+    digit = (fun c -> c - 48) <.> int_of_char <$> oneOf "0123456789" and
+    toNum x acc = x * 10 + acc
+  in
+    (List.fold_left toNum 0) <$> Lazy.force @@ some digit
