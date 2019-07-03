@@ -2,7 +2,6 @@ open Parser_combinator
 
 type ast =
   | IntLiteral of int
-  | Plus of ast
   | Minus of ast
   | Add of ast * ast
   | Sub of ast * ast
@@ -20,7 +19,7 @@ type ast =
 
 let unary =
   let
-    plus = char '+' >> return (fun ast -> Plus ast) and
+    plus = char '+' >> return (fun x -> x) and
     minus = char '-' >> return (fun ast -> Minus ast)
   in
     plus <|> minus <|> return (fun x -> x)
