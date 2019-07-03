@@ -45,24 +45,24 @@ let ( <|> ) p q = MParser (fun src -> parse p src @ parse q src)
 
 let liftA2 f x = (<*>) (f <$> x)
 
-
 let mparser =
-  Parser.(token "a"
+  token "a"
   >>= fun cut ->
   MParser (fun src ->
       let result = parse (token "b") src in
-        List.map (fun (a, str) -> (cut ^ a, str)) result))
+        List.map (fun (a, str) -> (cut ^ a, str)) result)
 
-let item = Parser.(MParser (function
+let item = MParser (function
   | "" -> []
-  | s  -> String.([(get (sub s 0 1) 0, sub s 1 (length s - 1))])))
+  | s  -> String.([(get (sub s 0 1) 0, sub s 1 (length s - 1))]))
 
-let satisfy f = Parser.(item >>= (fun ast -> if f ast then return ast else mzero))
+let satisfy f = item >>= (fun ast -> if f ast then return ast else mzero)
 
 let char c = satisfy ((==) c)
 
 let oneOf cs = satisfy (String.contains cs)
 
-let d1 = Parser.(int_of_char <$> oneOf "123456789")
+let d1 = int_of_char <$> oneOf "123456789"
 
-let d0 = Parser.(d1 <|> (int_of_char <$> char '0'))
+let d0 = d1 <|> (int_of_char <$> char '0')
+
