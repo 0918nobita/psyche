@@ -1,4 +1,4 @@
-open Parser.AST
+open Parser
 
 type ir =
   | I32Const of int
@@ -20,6 +20,8 @@ type ir =
 
 let rec ir_of_ast = function
   | IntLiteral n -> [I32Const n]
+  | Minus (expr) ->
+      ir_of_ast expr @ [I32Const (-1); I32Mul]
   | Add (lhs, rhs) ->
       ir_of_ast lhs @ ir_of_ast rhs @ [I32Add]
   | Sub (lhs, rhs) ->
