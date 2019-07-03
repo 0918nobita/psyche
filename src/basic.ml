@@ -92,17 +92,15 @@ let () =
         "Version 0.0.1\n"
     else
       let src = read @@ Sys.argv.(1) in
-      match program src 0 with
-        | Success ([Ast ast], _, p) when p = String.length src ->
-            let
-              out = open_out "out.wasm"
-            in
-              write out @@
-                header
-                @ type_header
-                @ type_0
-                @ function_header
-                @ export
-                @ code ast;
-              close_out out
-        | _ -> failwith "Syntax Error"
+      let ast = program src in
+        let
+          out = open_out "out.wasm"
+        in
+          write out @@
+            header
+            @ type_header
+            @ type_0
+            @ function_header
+            @ export
+            @ code ast;
+          close_out out
