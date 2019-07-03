@@ -112,7 +112,7 @@ let cmpop =
   <|> (token "<"  >> return (fun lhs rhs -> Less (lhs, rhs)))
   <|> (token "<=" >> return (fun lhs rhs -> LessE (lhs, rhs)))
   <|> (token ">"  >> return (fun lhs rhs -> Greater (lhs, rhs)))
-  <|> (token "<"  >> return (fun lhs rhs -> GreaterE (lhs, rhs)))
+  <|> (token "<=" >> return (fun lhs rhs -> GreaterE (lhs, rhs)))
 
 let chain1 p op =
   let rec rest a = ((fun f b -> f a b) <$> op <*> p >>= rest) <|> return a in
