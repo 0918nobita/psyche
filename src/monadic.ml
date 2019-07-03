@@ -66,3 +66,7 @@ let d1 = int_of_char <$> oneOf "123456789"
 
 let d0 = d1 <|> (int_of_char <$> char '0')
 
+let rec
+  many p  = some p <|> mzero
+and
+  some p = (List.cons) <$> p <*> many p >>= return
