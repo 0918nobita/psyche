@@ -100,3 +100,5 @@ and comparison_expr () = chain1 (arithmetic_expr ()) cmpop
 and logical_expr_and () = chain1 (comparison_expr ()) andop
 
 and logical_expr_or () = chain1 (logical_expr_and ()) orop
+
+let program = logical_expr_or ()
