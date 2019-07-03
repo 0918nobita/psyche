@@ -77,6 +77,8 @@ type ast =
   | LessE of ast * ast
   | Greater of ast * ast
   | GreaterE of ast * ast
+  | And of ast * ast
+  | Or of ast * ast
 
 let unary =
   let
@@ -114,6 +116,10 @@ let cmpop =
   <|> (token ">"  >> return (fun lhs rhs -> Greater (lhs, rhs)))
   <|> (token "<=" >> return (fun lhs rhs -> GreaterE (lhs, rhs)))
 
+let andop = token "&&" >> return (fun lhs rhs -> And (lhs, rhs))
+
+let orop = token "||" >> return (fun lhs rhs -> Or (lhs, rhs))
+
 let chain1 p op =
   let rec rest a = ((fun f b -> f a b) <$> op <*> p >>= rest) <|> return a in
     p >>= rest
@@ -121,7 +127,7 @@ let chain1 p op =
 let rec factor () =
   MParser (fun src ->
     match parse integer src with
-      | [] -> parse (char '(' >> (comparison_expr () >>= (fun c -> char ')' >> return c))) src
+      | [] -> parse (char '(' >> (logical_expr_or () >>= (fun c -> char ')' >> return c))) src
       | n  -> n)
 
 and term () = chain1 (factor ()) mulop
@@ -129,3 +135,7 @@ and term () = chain1 (factor ()) mulop
 and arithmetic_expr () = (fun op n -> op n) <$> unary <*> chain1 (term ()) addop
 
 and comparison_expr () = chain1 (arithmetic_expr ()) cmpop
+
+and logical_expr_and () = chain1 (comparison_expr ()) andop
+
+and logical_expr_or () = chain1 (logical_expr_and ()) orop
