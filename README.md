@@ -8,6 +8,23 @@ A WASM friendly lightweight programming language implemented in OCaml
 make build
 ```
 
+## REPL
+
+```bash
+dune exec psyche repl
+1 + 2
+main() => i32:3
+2 * 4 - 1
+main() => i32:7
+2 * if 2 > 0 then 3 else 4 + 5
+main() => i32:6
+...
+```
+
+### Commands
+
+`:quit`, `:exit` : Exit the REPL
+
 ## Test
 
 ```bash
