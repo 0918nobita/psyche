@@ -71,6 +71,12 @@ type ast =
   | Sub of ast * ast
   | Mul of ast * ast
   | Div of ast * ast
+  | Eq of ast * ast
+  | Ne of ast * ast
+  | Less of ast * ast
+  | LessE of ast * ast
+  | Greater of ast * ast
+  | GreaterE of ast * ast
 
 let unary =
   let
@@ -100,6 +106,14 @@ let integer =
   in
     (fun n -> IntLiteral n) <.> (List.fold_left toNum 0) <$> Lazy.force @@ some digit
 
+let cmpop =
+  (token "==" >> return (fun lhs rhs -> Eq (lhs, rhs)))
+  <|> (token "!=" >> return (fun lhs rhs -> Ne (lhs, rhs)))
+  <|> (token "<"  >> return (fun lhs rhs -> Less (lhs, rhs)))
+  <|> (token "<=" >> return (fun lhs rhs -> LessE (lhs, rhs)))
+  <|> (token ">"  >> return (fun lhs rhs -> Greater (lhs, rhs)))
+  <|> (token "<"  >> return (fun lhs rhs -> GreaterE (lhs, rhs)))
+
 let chain1 p op =
   let rec rest a = ((fun f b -> f a b) <$> op <*> p >>= rest) <|> return a in
     p >>= rest
@@ -107,9 +121,11 @@ let chain1 p op =
 let rec factor () =
   MParser (fun src ->
     match parse integer src with
-      | [] -> parse (char '(' >> (expr () >>= (fun c -> char ')' >> return c))) src
+      | [] -> parse (char '(' >> (comparison_expr () >>= (fun c -> char ')' >> return c))) src
       | n  -> n)
 
 and term () = chain1 (factor ()) mulop
 
-and expr () = (fun op n -> op n) <$> unary <*> chain1 (term ()) addop
+and arithmetic_expr () = (fun op n -> op n) <$> unary <*> chain1 (term ()) addop
+
+and comparison_expr () = chain1 (arithmetic_expr ()) cmpop
