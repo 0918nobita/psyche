@@ -108,11 +108,13 @@ and logical_expr_and () = chain1 (comparison_expr ()) andop
 
 and logical_expr_or () = chain1 (logical_expr_and ()) orop
 
+exception Syntax_error
+
 let program src =
   parse (spaces_opt >> logical_expr_or ()) src
   |> List.filter (fun (_, rest) -> rest = "")
   |> (fun list ->
     if List.length list = 0
-      then failwith "Syntax Error"
+      then raise Syntax_error
       else List.hd list
     |> fst)
