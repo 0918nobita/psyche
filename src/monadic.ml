@@ -79,6 +79,7 @@ type ast =
   | GreaterE of ast * ast
   | And of ast * ast
   | Or of ast * ast
+  | If of ast * ast * ast
 
 let unary =
   let
@@ -120,15 +121,39 @@ let andop = token "&&" >> return (fun lhs rhs -> And (lhs, rhs))
 
 let orop = token "||" >> return (fun lhs rhs -> Or (lhs, rhs))
 
+let spaces = Lazy.force @@ some @@ oneOf " \t\n"
+
+let spaces_opt = many @@ oneOf " \t\n"
+
 let chain1 p op =
-  let rec rest a = ((fun f b -> f a b) <$> op <*> p >>= rest) <|> return a in
+  let rec rest a = (spaces_opt >> ((fun f b -> f a b) <$> op <*> (spaces_opt >> p) >>= rest)) <|> return a in
     p >>= rest
 
 let rec factor () =
-  MParser (fun src ->
-    match parse integer src with
-      | [] -> parse (char '(' >> (logical_expr_or () >>= (fun c -> char ')' >> return c))) src
-      | n  -> n)
+  let if_expr = MParser (fun src ->
+    parse (
+      token "if"
+      >> spaces
+      >> logical_expr_or ()
+      >>= (fun ast ->
+        spaces_opt
+        >> token "then"
+        >> spaces
+        >> logical_expr_or ()
+        >>= (fun then_clause ->
+          spaces_opt
+          >> token "else"
+          >> spaces
+          >> logical_expr_or ()
+          >>= (fun else_clause -> return @@ If (ast, then_clause, else_clause))))) src)
+  in
+    MParser (fun src ->
+      match parse integer src with
+        | []  ->
+            (match parse (char '(' >> (logical_expr_or () >>= (fun c -> char ')' >> return c))) src with
+              | [] -> parse if_expr src
+              | ast -> ast)
+        | ast -> ast)
 
 and term () = chain1 (factor ()) mulop
 
