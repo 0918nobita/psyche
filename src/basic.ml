@@ -79,6 +79,29 @@ let code ast =
 open Parser
 
 let () =
+  let compile src =
+    let ast = program src in
+    let out = open_out "out.wasm" in
+      write out @@
+        header
+        @ type_header
+        @ type_0
+        @ function_header
+        @ export
+        @ code ast;
+      close_out out in
+  let repl () =
+    while true do
+      try
+        let input = read_line () in
+        if input = ":quit" || input = ":exit" then exit 0;
+        compile @@ input;
+        match Sys.command "wasm-interp --run-all-exports ./out.wasm" with
+          | 0 -> ()
+          | _ -> failwith "wasm-interp との連携に失敗しました"
+      with
+        Parser.Syntax_error -> print_endline "Syntax Error"
+    done in
   if Array.length Sys.argv = 1
     then
       print_string @@
@@ -91,16 +114,6 @@ let () =
         "A WASM friendly lightweight programming language\n" ^
         "Version 0.0.1\n"
     else
-      let src = read @@ Sys.argv.(1) in
-      let ast = program src in
-        let
-          out = open_out "out.wasm"
-        in
-          write out @@
-            header
-            @ type_header
-            @ type_0
-            @ function_header
-            @ export
-            @ code ast;
-          close_out out
+      if Sys.argv.(1) = "repl"
+        then repl ()
+        else compile @@ read @@ Sys.argv.(1)
