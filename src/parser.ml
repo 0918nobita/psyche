@@ -88,7 +88,9 @@ let rec factor () =
           >> token "else"
           >> spaces
           >> logical_expr_or ()
-          >>= (fun else_clause -> return @@ If (ast, then_clause, else_clause))))) src)
+          >>= (fun else_clause ->
+            spaces_opt
+            >> return @@ If (ast, then_clause, else_clause))))) src)
   in
     MParser (fun src ->
       match parse integer src with
