@@ -1,4 +1,5 @@
 (executable
   (name compiler)
   (public_name psyche)
-  (libraries base parser ir))
+  (libraries base parser ir)
+  (preprocess (pps knights)))

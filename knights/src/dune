@@ -1,3 +1,5 @@
-(executable
+(library
   (name main)
-  (public_name knights))
+  (public_name knights)
+  (kind ppx_rewriter)
+  (libraries ppxlib))
