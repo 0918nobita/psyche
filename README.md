@@ -8,6 +8,12 @@ A WASM friendly lightweight programming language implemented in OCaml
 make build
 ```
 
+## Run tests
+
+```bash
+dune runtest
+```
+
 ## REPL
 
 ```bash
