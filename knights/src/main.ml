@@ -1,20 +1,17 @@
-open Parsetree
-open Ast_mapper
-open Ast_helper
-open Asttypes
-open Longident
+open Ppxlib
 
-let expr_mapper mapper = function
-  | { pexp_desc = Pexp_extension ({ txt = ""; loc }, pstr); _ } ->
-      (match pstr with
-        | PStr [{ pstr_desc = Pstr_eval (expression, _); _}] ->
-            Exp.apply
-              (Exp.ident {txt = Lident "+"; loc=(!default_loc)})
-              [(Nolabel, expression); (Nolabel, Exp.constant (Pconst_integer ("1", None)))]
-        | _ -> raise (Location.Error (Location.error ~loc "SyntaxError")))
-  | x -> default_mapper.expr mapper x
+let name = "snapshot_target"
 
-let addone_mapper _ =
-  { default_mapper with expr = expr_mapper }
+let expand ~loc ~path:_ (env : string) =
+  match Caml.Sys.getenv env with
+    | s -> [%expr Some ([%e Ast_builder.Default.estring s ~loc])]
+    | exception Not_found -> [%expr None]
 
-let () = register "register" addone_mapper
+let ext =
+  Extension.declare
+    name
+    Extension.Context.expression
+    Ast_pattern.(single_expr_payload (estring __))
+    expand
+
+let () = Driver.register_transformation name ~extensions:[ext]

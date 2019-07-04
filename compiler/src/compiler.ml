@@ -104,7 +104,7 @@ let () =
     done in
   if Array.length Sys.argv = 1
     then
-      print_string @@
+      begin print_string @@
         "    ____                  __\n" ^
         "   / __ \\_______  _______/ /_  ___\n" ^
         "  / /_/ / ___/ / / / ___/ __ \\/ _ \\\n" ^
@@ -112,7 +112,11 @@ let () =
         "/_/   /____/\\__, /\\___/_/ /_/\\___/\n" ^
         "           /____/\n\n" ^
         "A WASM friendly lightweight programming language\n" ^
-        "Version 0.0.1\n"
+        "Version 0.0.1\n";
+        match [%snapshot_target "SHELL"] with
+          | Some v -> print_string v
+          | None -> print_string "None"
+      end
     else
       match Sys.argv.(1) with
         | "repl" ->
