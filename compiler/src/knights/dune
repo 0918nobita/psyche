@@ -1,6 +1,5 @@
 (library
-  (name main)
-  (public_name knights)
+  (name knights)
   (kind ppx_rewriter)
   (libraries ppxlib)
   (preprocess (pps ppxlib.metaquot)))
