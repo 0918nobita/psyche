@@ -16,6 +16,9 @@ type ast =
   | And of ast * ast
   | Or of ast * ast
   | If of ast * ast * ast
+  [@@deriving knights]
+
+let () = print_int foo (* => 42 *)
 
 let unary =
   let

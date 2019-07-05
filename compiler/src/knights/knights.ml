@@ -1,17 +1,15 @@
 open Ppxlib
 
-let name = "snapshot_target"
+let str_type_decl_generator =
+  Deriving.Generator.make_noarg
+    (fun ~loc ~path:_ (_ : rec_flag * type_declaration Base.List.t) ->
+      ([{ pstr_desc = Pstr_value (Nonrecursive,
+          [{ pvb_pat = { ppat_desc = Ppat_var { txt = "foo"; loc }; ppat_loc = loc; ppat_attributes = [] };
+            pvb_expr = [%expr 42];
+            pvb_attributes = []; pvb_loc = loc
+          }])
+        ; pstr_loc = loc }] : structure))
 
-let expand ~loc ~path:_ (env : string) =
-  match Caml.Sys.getenv env with
-    | s -> [%expr Some ([%e Ast_builder.Default.estring s ~loc])]
-    | exception Not_found -> [%expr None]
-
-let ext =
-  Extension.declare
-    name
-    Extension.Context.expression
-    Ast_pattern.(single_expr_payload (estring __))
-    expand
-
-let () = Driver.register_transformation name ~extensions:[ext]
+let deriver = Deriving.add
+  ~str_type_decl:str_type_decl_generator
+  "knights"

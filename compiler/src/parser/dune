@@ -1,3 +1,4 @@
 (library
   (name parser)
-  (libraries parser_combinator))
+  (libraries parser_combinator)
+  (preprocess (pps knights)))
