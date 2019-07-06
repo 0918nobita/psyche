@@ -24,6 +24,8 @@ val ( <|> ) : 'a parser -> 'a parser -> 'a parser
 
 val oneOf : string -> char parser
 
+val option : 'a -> 'a parser -> 'a parser
+
 val many : 'a parser -> 'a list parser
 
 val some : 'a parser -> 'a list parser lazy_t

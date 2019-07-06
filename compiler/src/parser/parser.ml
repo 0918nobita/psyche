@@ -1,23 +1,24 @@
 open Parser_combinator
 
-type ast =
+type expr_ast =
   | IntLiteral of int
-  | Minus of ast
-  | Add of ast * ast
-  | Sub of ast * ast
-  | Mul of ast * ast
-  | Div of ast * ast
-  | Eq of ast * ast
-  | Ne of ast * ast
-  | Less of ast * ast
-  | LessE of ast * ast
-  | Greater of ast * ast
-  | GreaterE of ast * ast
-  | And of ast * ast
-  | Or of ast * ast
-  | If of ast * ast * ast
-  | ConstDef of string * ast
+  | Minus of expr_ast
+  | Add of expr_ast * expr_ast
+  | Sub of expr_ast * expr_ast
+  | Mul of expr_ast * expr_ast
+  | Div of expr_ast * expr_ast
+  | Eq of expr_ast * expr_ast
+  | Ne of expr_ast * expr_ast
+  | Less of expr_ast * expr_ast
+  | LessE of expr_ast * expr_ast
+  | Greater of expr_ast * expr_ast
+  | GreaterE of expr_ast * expr_ast
+  | And of expr_ast * expr_ast
+  | Or of expr_ast * expr_ast
+  | If of expr_ast * expr_ast * expr_ast
   [@@deriving knights]
+
+type stmt_ast = ConstDef of string * expr_ast
 
 let unary =
   let

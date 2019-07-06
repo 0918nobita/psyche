@@ -48,7 +48,6 @@ let rec ir_of_ast = function
       ir_of_ast lhs @ [I32Local [TeeLocal 0; I32Eqz; I32If (ir_of_ast rhs, [GetLocal 0])]]
   | If (cond, t, e) ->
       ir_of_ast cond @ [I32Eqz; I32If (ir_of_ast e, ir_of_ast t)]
-  | ConstDef (ident, _) -> failwith @@ "constant `" ^ ident ^ "` was defined"
 
 let rec instructions_of_ir (irs, current, max) = match irs with
   | [] -> []
