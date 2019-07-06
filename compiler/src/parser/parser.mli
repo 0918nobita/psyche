@@ -14,6 +14,7 @@ type ast =
   | And of ast * ast
   | Or of ast * ast
   | If of ast * ast * ast
+  | ConstDef of string * ast
 
 exception Syntax_error
 

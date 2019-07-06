@@ -12,6 +12,8 @@ val ( <$> ) : ('a -> 'b) -> 'a parser -> 'b parser
 
 val return : 'a -> 'a parser
 
+val satisfy : (char -> bool) -> char parser
+
 val char : char -> char parser
 
 val ( >>= ) : 'a parser -> ('a -> 'b parser) -> 'b parser

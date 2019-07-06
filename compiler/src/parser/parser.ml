@@ -16,6 +16,7 @@ type ast =
   | And of ast * ast
   | Or of ast * ast
   | If of ast * ast * ast
+  | ConstDef of string * ast
   [@@deriving knights]
 
 let unary =
@@ -110,6 +111,29 @@ and comparison_expr () = chain1 (arithmetic_expr ()) cmpop
 and logical_expr_and () = chain1 (comparison_expr ()) andop
 
 and logical_expr_or () = chain1 (logical_expr_and ()) orop
+
+let letter = satisfy (fun c -> let code = Char.code c in (65 <= code && code <= 90) || (97 <= code && code <= 122))
+
+let digit = oneOf "0123456789"
+
+let rec string_of_chars = function
+  | [] -> ""
+  | c :: cs -> String.make 1 c ^ string_of_chars cs
+
+let identifier = (fun c cs -> string_of_chars (c :: cs)) <$> letter <*> (many (letter <|> digit))
+
+let const_def =
+  token "const"
+  >> spaces
+  >> identifier
+  >>= (fun ident ->
+    spaces_opt
+    >> char '='
+    >> spaces_opt
+    >> logical_expr_or ()
+    >>= (fun expr ->
+      spaces_opt
+      >> return @@ ConstDef (ident, expr)))
 
 exception Syntax_error
 
