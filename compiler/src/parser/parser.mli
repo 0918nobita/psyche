@@ -19,4 +19,4 @@ type stmt_ast = ConstDef of string * expr_ast
 
 exception Syntax_error
 
-val program : string -> ast
+val program : string -> stmt_ast list

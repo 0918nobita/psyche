@@ -139,10 +139,20 @@ let const_def =
 exception Syntax_error
 
 let program src =
-  parse (spaces_opt >> logical_expr_or ()) src
+  let parser = option []
+    (spaces_opt
+    >> const_def
+    >>= (fun head ->
+      many (char ';' >> spaces_opt >> const_def)
+      >>= (fun tail ->
+        spaces_opt
+        >> option (' ') (char ';')
+        >> spaces_opt
+        >> return @@ head :: tail))) in
+  parse parser src
   |> List.filter (fun (_, rest) -> rest = "")
   |> (fun list ->
     if List.length list = 0
       then raise Syntax_error
-      else List.hd list
-    |> fst)
+      else List.hd list)
+    |> fst
