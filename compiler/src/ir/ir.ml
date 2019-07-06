@@ -49,53 +49,56 @@ let rec ir_of_ast = function
   | If (cond, t, e) ->
       ir_of_ast cond @ [I32Eqz; I32If (ir_of_ast e, ir_of_ast t)]
 
-let rec instructions_of_ir (irs, current, max) = match irs with
-  | [] -> []
-  | I32Const n :: tail ->
-      65 :: Binary.leb128_of_int n @
-      instructions_of_ir (tail, current, max)
-  | I32Add :: tail ->
-      106 :: instructions_of_ir (tail, current, max)
-  | I32Sub :: tail ->
-      107 :: instructions_of_ir (tail, current, max)
-  | I32Mul :: tail ->
-      108 :: instructions_of_ir (tail, current, max)
-  | I32DivS :: tail ->
-      109 :: instructions_of_ir (tail, current, max)
-  | I32Eq :: tail ->
-      70 :: instructions_of_ir (tail, current, max)
-  | I32Ne :: tail ->
-      71 :: instructions_of_ir (tail, current, max)
-  | I32Gt :: tail ->
-      74 :: instructions_of_ir (tail, current, max)
-  | I32Ge :: tail ->
-      78 :: instructions_of_ir (tail, current, max)
-  | I32Lt :: tail ->
-      72 :: instructions_of_ir (tail, current, max)
-  | I32Le :: tail ->
-      76 :: instructions_of_ir (tail, current, max)
-  | I32Eqz :: tail ->
-      69 :: instructions_of_ir (tail, current, max)
-  | I32If (t, e) :: tail ->
-      4 (* if *) ::
-      127 (* i32 *) ::
-      instructions_of_ir (t, current, max) @
-      [ 5 (* else *)
-      ] @
-      instructions_of_ir (e, current, max) @
-      [ 11 (* end*)
-      ] @
-      instructions_of_ir (tail, current, max)
-  | I32Local inner_irs :: tail ->
-      (if !max = current
-        then
-          (max := !max + 1;
-          instructions_of_ir (inner_irs, current + 1,  max))
-        else instructions_of_ir (inner_irs, current + 1, max)) @
-      instructions_of_ir (tail, current, max)
-  | TeeLocal n :: tail ->
-      34 :: Binary.leb128_of_int (n + current) @
-      instructions_of_ir (tail, current, max)
-  | GetLocal n :: tail ->
-      32 :: Binary.leb128_of_int (n + current) @
-      instructions_of_ir (tail, current, max)
+let instructions_of_ir irs max =
+  let rec inner (irs, current, max) = match irs with
+    | [] -> []
+    | I32Const n :: tail ->
+        65 :: Binary.leb128_of_int n @
+        inner (tail, current, max)
+    | I32Add :: tail ->
+        106 :: inner (tail, current, max)
+    | I32Sub :: tail ->
+        107 :: inner (tail, current, max)
+    | I32Mul :: tail ->
+        108 :: inner (tail, current, max)
+    | I32DivS :: tail ->
+        109 :: inner (tail, current, max)
+    | I32Eq :: tail ->
+        70 :: inner (tail, current, max)
+    | I32Ne :: tail ->
+        71 :: inner (tail, current, max)
+    | I32Gt :: tail ->
+        74 :: inner (tail, current, max)
+    | I32Ge :: tail ->
+        78 :: inner (tail, current, max)
+    | I32Lt :: tail ->
+        72 :: inner (tail, current, max)
+    | I32Le :: tail ->
+        76 :: inner (tail, current, max)
+    | I32Eqz :: tail ->
+        69 :: inner (tail, current, max)
+    | I32If (t, e) :: tail ->
+        4 (* if *) ::
+        127 (* i32 *) ::
+        inner (t, current, max) @
+        [ 5 (* else *)
+        ] @
+        inner (e, current, max) @
+        [ 11 (* end*)
+        ] @
+        inner (tail, current, max)
+    | I32Local inner_irs :: tail ->
+        (if !max = current
+          then
+            (max := !max + 1;
+            inner (inner_irs, current + 1,  max))
+          else inner (inner_irs, current + 1, max)) @
+        inner (tail, current, max)
+    | TeeLocal n :: tail ->
+        34 :: Binary.leb128_of_int (n + current) @
+        inner (tail, current, max)
+    | GetLocal n :: tail ->
+        32 :: Binary.leb128_of_int (n + current) @
+        inner (tail, current, max)
+  in
+    inner (irs, -1, max)
