@@ -49,10 +49,10 @@ let integer =
 let cmpop =
   (token "==" >> return (fun lhs rhs -> Eq (lhs, rhs)))
   <|> (token "!=" >> return (fun lhs rhs -> Ne (lhs, rhs)))
-  <|> (token "<"  >> return (fun lhs rhs -> Less (lhs, rhs)))
   <|> (token "<=" >> return (fun lhs rhs -> LessE (lhs, rhs)))
+  <|> (token "<"  >> return (fun lhs rhs -> Less (lhs, rhs)))
+  <|> (token ">=" >> return (fun lhs rhs -> GreaterE (lhs, rhs)))
   <|> (token ">"  >> return (fun lhs rhs -> Greater (lhs, rhs)))
-  <|> (token "<=" >> return (fun lhs rhs -> GreaterE (lhs, rhs)))
 
 let andop = token "&&" >> return (fun lhs rhs -> And (lhs, rhs))
 
