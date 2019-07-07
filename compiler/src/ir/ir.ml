@@ -17,41 +17,61 @@ type instruction =
   | I32Local of instruction list
   | TeeLocal of int
   | GetLocal of int
+  | I32Load
+  | I32Store
 
-let rec instructions_of_ast = function
-  | IntLiteral n -> [I32Const n]
-  | Minus (expr) ->
-      instructions_of_ast expr @ [I32Const (-1); I32Mul]
-  | Add (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Add]
-  | Sub (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Sub]
-  | Mul (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Mul]
-  | Div (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32DivS]
-  | Eq (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Eq]
-  | Ne (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Ne]
-  | Greater (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Gt]
-  | GreaterE (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Ge]
-  | Less (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Lt]
-  | LessE (lhs, rhs) ->
-      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Le]
-  | And (lhs, rhs) ->
-      instructions_of_ast lhs @ [I32Eqz; I32If ([I32Const 0], instructions_of_ast rhs)]
-  | Or (lhs, rhs) ->
-      instructions_of_ast lhs @ [I32Local [TeeLocal 0; I32Eqz; I32If (instructions_of_ast rhs, [GetLocal 0])]]
-  | If (cond, t, e) ->
-      instructions_of_ast cond @ [I32Eqz; I32If (instructions_of_ast e, instructions_of_ast t)]
-  | Let (_, _, _) -> failwith "Not implemented"
-  | Ident _ -> failwith "Not implemented"
+let insts_of_expr_ast ast =
+  let rec inner (expr_ast, env) = match expr_ast with
+    | IntLiteral n -> [I32Const n]
+    | Minus (expr) ->
+        inner (expr, env) @ [I32Const (-1); I32Mul]
+    | Add (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Add]
+    | Sub (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Sub]
+    | Mul (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Mul]
+    | Div (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32DivS]
+    | Eq (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Eq]
+    | Ne (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Ne]
+    | Greater (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Gt]
+    | GreaterE (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Ge]
+    | Less (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Lt]
+    | LessE (lhs, rhs) ->
+        inner (lhs, env) @ inner (rhs, env) @ [I32Le]
+    | And (lhs, rhs) ->
+        inner (lhs, env) @ [I32Eqz; I32If ([I32Const 0], inner (rhs, env))]
+    | Or (lhs, rhs) ->
+        inner (lhs, env) @ [I32Local [TeeLocal 0; I32Eqz; I32If (inner (rhs, env), [GetLocal 0])]]
+    | If (cond, t, e) ->
+        inner (cond, env) @ [I32Eqz; I32If (inner (e, env), inner (t, env))]
+    | Let (ident, bound_expr, expr) ->
+        let reserved_addr = snd env + 1 in
+        let env_for_bound_expr = (fst env, reserved_addr) in
+        let env_for_expr = ((ident, reserved_addr) :: fst env, reserved_addr) in
+          I32Const (reserved_addr * 4) ::
+          inner (bound_expr, env_for_bound_expr) @
+          [I32Store] @
+          inner (expr, env_for_expr)
+    | Ident name ->
+        let addrs =
+          fst env
+            |> List.filter (fun elem -> fst elem = name)
+            |> List.map snd
+        in
+          if List.length addrs = 0
+            then (print_endline @@ "Error: unbound value `" ^ name ^ "`"; exit (-1))
+            else [I32Const (List.hd addrs * 4); I32Load]
+  in
+    inner (ast, ([], -1))
 
-let bin_of_instructions irs max =
+let bin_of_insts irs max =
   let rec inner (irs, current, max) = match irs with
     | [] -> []
     | I32Const n :: tail ->
@@ -101,6 +121,16 @@ let bin_of_instructions irs max =
         inner (tail, current, max)
     | GetLocal n :: tail ->
         32 :: Binary.leb128_of_int (n + current) @
+        inner (tail, current, max)
+    | I32Load :: tail ->
+        40 :: (* opcode *)
+        2 :: (* alignment *)
+        0 :: (* load offset *)
+        inner (tail, current, max)
+    | I32Store :: tail ->
+        54 :: (* opcode *)
+        2 :: (* alignment *)
+        0 :: (* store offset *)
         inner (tail, current, max)
   in
     inner (irs, -1, max)

@@ -58,6 +58,14 @@ let function_section ast =
     ] @
     List.init num_functions (fun _ -> 0 (* function 0 signature index *))
 
+let memory =
+  [ 5 (* section code *)
+  ; 3 (* section size *)
+  ; 1 (* num memories *)
+  ; 0 (* limits: flags *)
+  ; 1 (* limits: initial *)
+  ]
+
 let ( <.> ) f g x = f @@ g x
 
 let concatMap f = List.(concat <.> map f)
@@ -82,7 +90,7 @@ let export stmt_ast =
 
 let function_body expr_ast =
   let max = ref (-1) in
-  let instructions = (Ir.bin_of_instructions (Ir.instructions_of_ast expr_ast) max) @ [ 11 (* end *)] in
+  let instructions = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast) max) @ [ 11 (* end *)] in
   let local_decl_count = !max + 1 in
   let decl =
     (if local_decl_count > 0
@@ -116,6 +124,7 @@ let () =
           @ type_header
           @ type_0
           @ function_section ast
+          @ memory
           @ export ast
           @ code ast;
         close_out out
