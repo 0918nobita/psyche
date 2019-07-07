@@ -82,7 +82,7 @@ let export stmt_ast =
 
 let function_body expr_ast =
   let max = ref (-1) in
-  let instructions = (Ir.instructions_of_ir (Ir.ir_of_ast expr_ast) max) @ [ 11 (* end *)] in
+  let instructions = (Ir.bin_of_instructions (Ir.instructions_of_ast expr_ast) max) @ [ 11 (* end *)] in
   let local_decl_count = !max + 1 in
   let decl =
     (if local_decl_count > 0

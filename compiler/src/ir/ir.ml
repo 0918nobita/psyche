@@ -1,6 +1,6 @@
 open Parser
 
-type ir =
+type instruction =
   | I32Const of int
   | I32Add
   | I32Sub
@@ -13,45 +13,45 @@ type ir =
   | I32Lt
   | I32Le
   | I32Eqz
-  | I32If of ir list * ir list
-  | I32Local of ir list
+  | I32If of instruction list * instruction list
+  | I32Local of instruction list
   | TeeLocal of int
   | GetLocal of int
 
-let rec ir_of_ast = function
+let rec instructions_of_ast = function
   | IntLiteral n -> [I32Const n]
   | Minus (expr) ->
-      ir_of_ast expr @ [I32Const (-1); I32Mul]
+      instructions_of_ast expr @ [I32Const (-1); I32Mul]
   | Add (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Add]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Add]
   | Sub (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Sub]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Sub]
   | Mul (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Mul]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Mul]
   | Div (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32DivS]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32DivS]
   | Eq (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Eq]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Eq]
   | Ne (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Ne]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Ne]
   | Greater (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Gt]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Gt]
   | GreaterE (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Ge]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Ge]
   | Less (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Lt]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Lt]
   | LessE (lhs, rhs) ->
-      ir_of_ast lhs @ ir_of_ast rhs @ [I32Le]
+      instructions_of_ast lhs @ instructions_of_ast rhs @ [I32Le]
   | And (lhs, rhs) ->
-      ir_of_ast lhs @ [I32Eqz; I32If ([I32Const 0], ir_of_ast rhs)]
+      instructions_of_ast lhs @ [I32Eqz; I32If ([I32Const 0], instructions_of_ast rhs)]
   | Or (lhs, rhs) ->
-      ir_of_ast lhs @ [I32Local [TeeLocal 0; I32Eqz; I32If (ir_of_ast rhs, [GetLocal 0])]]
+      instructions_of_ast lhs @ [I32Local [TeeLocal 0; I32Eqz; I32If (instructions_of_ast rhs, [GetLocal 0])]]
   | If (cond, t, e) ->
-      ir_of_ast cond @ [I32Eqz; I32If (ir_of_ast e, ir_of_ast t)]
+      instructions_of_ast cond @ [I32Eqz; I32If (instructions_of_ast e, instructions_of_ast t)]
   | Let (_, _, _) -> failwith "Not implemented"
   | Ident _ -> failwith "Not implemented"
 
-let instructions_of_ir irs max =
+let bin_of_instructions irs max =
   let rec inner (irs, current, max) = match irs with
     | [] -> []
     | I32Const n :: tail ->
