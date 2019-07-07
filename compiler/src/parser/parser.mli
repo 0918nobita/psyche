@@ -14,6 +14,7 @@ type expr_ast =
   | And of expr_ast * expr_ast
   | Or of expr_ast * expr_ast
   | If of expr_ast * expr_ast * expr_ast
+  | Let of string * expr_ast * expr_ast
 
 type stmt_ast = ExportDef of string * expr_ast
 
