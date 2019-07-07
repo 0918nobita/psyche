@@ -2,6 +2,7 @@ open Parser_combinator
 
 type expr_ast =
   | IntLiteral of int
+  | Ident of string
   | Minus of expr_ast
   | Add of expr_ast * expr_ast
   | Sub of expr_ast * expr_ast
@@ -128,7 +129,8 @@ let rec factor () =
         integer
         <|> (char '(' >> (logical_expr_or () >>= (fun c -> char ')' >> return c)))
         <|> if_expr
-        <|> let_expr) src)
+        <|> let_expr
+        <|> (identifier >>= (fun name -> return @@ Ident name))) src)
 
 and term () = chain1 (factor ()) mulop
 

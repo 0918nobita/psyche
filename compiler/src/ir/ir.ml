@@ -49,6 +49,7 @@ let rec ir_of_ast = function
   | If (cond, t, e) ->
       ir_of_ast cond @ [I32Eqz; I32If (ir_of_ast e, ir_of_ast t)]
   | Let (_, _, _) -> failwith "Not implemented"
+  | Ident _ -> failwith "Not implemented"
 
 let instructions_of_ir irs max =
   let rec inner (irs, current, max) = match irs with

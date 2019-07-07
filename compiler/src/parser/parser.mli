@@ -1,5 +1,6 @@
 type expr_ast =
   | IntLiteral of int
+  | Ident of string
   | Minus of expr_ast
   | Add of expr_ast * expr_ast
   | Sub of expr_ast * expr_ast
