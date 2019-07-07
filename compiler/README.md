@@ -16,12 +16,12 @@ dune runtest
 
 ```bash
 dune exec psyche repl
-1 + 2
-main() => i32:3
-2 * 4 - 1
-main() => i32:7
-2 * if 2 > 0 then 3 else 4 + 5
-main() => i32:6
+export foo = 1 + 2
+foo() => i32:3
+export bar = 2 * 4 - 1
+bar() => i32:7
+export baz = 2 * if 2 > 0 then 3 else 4 + 5
+baz() => i32:6
 ...
 ```
 
