@@ -121,8 +121,7 @@ let rec factor () =
           >> spaces
           >> logical_expr_or ()
           >>= (fun expr ->
-            spaces_opt
-            >> return @@ Let (ident, bound_expr, expr))))) src)
+            return @@ Let (ident, bound_expr, expr))))) src)
   in
     MParser (fun src ->
       parse (
