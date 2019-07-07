@@ -18,7 +18,7 @@ type expr_ast =
   | If of expr_ast * expr_ast * expr_ast
   [@@deriving knights]
 
-type stmt_ast = ConstDef of string * expr_ast
+type stmt_ast = ExportDef of string * expr_ast
 
 let unary =
   let
@@ -123,8 +123,8 @@ let rec string_of_chars = function
 
 let identifier = (fun c cs -> string_of_chars (c :: cs)) <$> letter <*> (many (letter <|> digit))
 
-let const_def =
-  token "const"
+let export_def =
+  token "export"
   >> spaces
   >> identifier
   >>= (fun ident ->
@@ -134,16 +134,16 @@ let const_def =
     >> logical_expr_or ()
     >>= (fun expr ->
       spaces_opt
-      >> return @@ ConstDef (ident, expr)))
+      >> return @@ ExportDef (ident, expr)))
 
 exception Syntax_error
 
 let program src =
   let parser = option []
     (spaces_opt
-    >> const_def
+    >> export_def
     >>= (fun head ->
-      many (char ';' >> spaces_opt >> const_def)
+      many (char ';' >> spaces_opt >> export_def)
       >>= (fun tail ->
         spaces_opt
         >> option (' ') (char ';')

@@ -15,7 +15,7 @@ type expr_ast =
   | Or of expr_ast * expr_ast
   | If of expr_ast * expr_ast * expr_ast
 
-type stmt_ast = ConstDef of string * expr_ast
+type stmt_ast = ExportDef of string * expr_ast
 
 exception Syntax_error
 
