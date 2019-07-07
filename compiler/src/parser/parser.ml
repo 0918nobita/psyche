@@ -2,6 +2,7 @@ open Parser_combinator
 
 type expr_ast =
   | IntLiteral of int
+  | Ident of string
   | Minus of expr_ast
   | Add of expr_ast * expr_ast
   | Sub of expr_ast * expr_ast
@@ -16,6 +17,7 @@ type expr_ast =
   | And of expr_ast * expr_ast
   | Or of expr_ast * expr_ast
   | If of expr_ast * expr_ast * expr_ast
+  | Let of string * expr_ast * expr_ast
   [@@deriving knights]
 
 type stmt_ast = ExportDef of string * expr_ast
@@ -75,6 +77,16 @@ let chain1 p op =
     >>= rest
     >>= (fun ast -> spaces_opt >> return ast)
 
+let letter = satisfy (fun c -> let code = Char.code c in (65 <= code && code <= 90) || (97 <= code && code <= 122))
+
+let digit = oneOf "0123456789"
+
+let rec string_of_chars = function
+  | [] -> ""
+  | c :: cs -> String.make 1 c ^ string_of_chars cs
+
+let identifier = (fun c cs -> string_of_chars (c :: cs)) <$> letter <*> (many (letter <|> digit))
+
 let rec factor () =
   let if_expr = MParser (fun src ->
     parse (
@@ -95,13 +107,30 @@ let rec factor () =
             spaces_opt
             >> return @@ If (ast, then_clause, else_clause))))) src)
   in
+  let let_expr = MParser (fun src ->
+    parse (
+      token "let"
+      >> spaces
+      >> identifier
+      >>= (fun ident ->
+        spaces_opt
+        >> char '='
+        >> spaces_opt
+        >> logical_expr_or ()
+        >>= (fun bound_expr ->
+          token "in"
+          >> spaces
+          >> logical_expr_or ()
+          >>= (fun expr ->
+            return @@ Let (ident, bound_expr, expr))))) src)
+  in
     MParser (fun src ->
-      match parse integer src with
-        | []  ->
-            (match parse (char '(' >> (logical_expr_or () >>= (fun c -> char ')' >> return c))) src with
-              | [] -> parse if_expr src
-              | ast -> ast)
-        | ast -> ast)
+      parse (
+        integer
+        <|> (char '(' >> (logical_expr_or () >>= (fun c -> char ')' >> return c)))
+        <|> if_expr
+        <|> let_expr
+        <|> (identifier >>= (fun name -> return @@ Ident name))) src)
 
 and term () = chain1 (factor ()) mulop
 
@@ -112,16 +141,6 @@ and comparison_expr () = chain1 (arithmetic_expr ()) cmpop
 and logical_expr_and () = chain1 (comparison_expr ()) andop
 
 and logical_expr_or () = chain1 (logical_expr_and ()) orop
-
-let letter = satisfy (fun c -> let code = Char.code c in (65 <= code && code <= 90) || (97 <= code && code <= 122))
-
-let digit = oneOf "0123456789"
-
-let rec string_of_chars = function
-  | [] -> ""
-  | c :: cs -> String.make 1 c ^ string_of_chars cs
-
-let identifier = (fun c cs -> string_of_chars (c :: cs)) <$> letter <*> (many (letter <|> digit))
 
 let export_def =
   token "export"

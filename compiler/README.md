@@ -45,13 +45,14 @@ digit = zero | non_zero_digit
 integer = ["+" | "-"], (zero | (non_zero_digit, { digit }))
 letter = "a" | "b" | "c" | ... | "z" | "A" | "B" | "C" | ... | "Z"
 identifier = letter, { letter | digit }
-factor = integer | symbol | if_expr | ("(", logical_expr_or, ")")
+factor = integer | identifier | if_expr | ("(", logical_expr_or, ")") | let_expr
 term = factor, { ("*" | "/"), factor }
 arithmetic_expr = term, { ("+" | "-"), term }
 comparison_expr = arithmetic_expr, { ("==" | "!=" | "<" | "<=" | "=>" | ">"), arithmetic_expr }
 logical_expr_and = comparison_expr, { "&&", comparison_expr }
 logical_expr_or = logical_expr_and, { "||", logical_expr_and }
 if_expr = "if", logical_expr_or, "then", logical_expr_or, "else", logical_expr_or
+let_expr = "let", identifier, "=", logical_expr_or, "in", logical_expr_or
 statement = "export", identifier, "=", logical_expr_or
 program = { statement }
 ```

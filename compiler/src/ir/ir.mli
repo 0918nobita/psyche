@@ -1,5 +1,5 @@
-type ir
+type instruction
 
-val ir_of_ast : Parser.expr_ast -> ir list
+val insts_of_expr_ast : Parser.expr_ast -> instruction list
 
-val instructions_of_ir : ir list -> int ref -> int list
+val bin_of_insts : instruction list -> int ref -> int list
