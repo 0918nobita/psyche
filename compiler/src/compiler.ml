@@ -23,6 +23,18 @@ let adjust_size size bytes =
           then bytes @ make_list lack 0
           else failwith "(adjust_arr_length) Invalid format"
 
+open Parser
+
+let checkDuplication =
+  let rec inner checked = function
+    | [] -> ()
+    | ExportDef (name, _) :: tail ->
+        if List.mem name checked
+          then (print_endline @@ "Error: duplicate export `" ^ name ^ "`"; exit (-1))
+          else inner (name :: checked) tail
+  in
+    inner []
+
 let header = Binary.to_uint32 1836278016 @ Binary.to_uint32 1
 
 let type_header =
@@ -49,8 +61,6 @@ let function_section ast =
 let ( <.> ) f g x = f @@ g x
 
 let concatMap f = List.(concat <.> map f)
-
-open Parser
 
 let export stmt_ast =
   let export_sig =
@@ -99,15 +109,17 @@ let code stmt_ast =
 let () =
   let compile src =
     let ast = program src in
-    let out = open_out "out.wasm" in
-      write out @@
-        header
-        @ type_header
-        @ type_0
-        @ function_section ast
-        @ export ast
-        @ code ast;
-      close_out out in
+      checkDuplication ast;
+      let out = open_out "out.wasm" in
+        write out @@
+          header
+          @ type_header
+          @ type_0
+          @ function_section ast
+          @ export ast
+          @ code ast;
+        close_out out
+  in
   let repl () =
     while true do
       try
