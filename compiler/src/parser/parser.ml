@@ -1,22 +1,24 @@
 open Parser_combinator
 
-type ast =
+type expr_ast =
   | IntLiteral of int
-  | Minus of ast
-  | Add of ast * ast
-  | Sub of ast * ast
-  | Mul of ast * ast
-  | Div of ast * ast
-  | Eq of ast * ast
-  | Ne of ast * ast
-  | Less of ast * ast
-  | LessE of ast * ast
-  | Greater of ast * ast
-  | GreaterE of ast * ast
-  | And of ast * ast
-  | Or of ast * ast
-  | If of ast * ast * ast
+  | Minus of expr_ast
+  | Add of expr_ast * expr_ast
+  | Sub of expr_ast * expr_ast
+  | Mul of expr_ast * expr_ast
+  | Div of expr_ast * expr_ast
+  | Eq of expr_ast * expr_ast
+  | Ne of expr_ast * expr_ast
+  | Less of expr_ast * expr_ast
+  | LessE of expr_ast * expr_ast
+  | Greater of expr_ast * expr_ast
+  | GreaterE of expr_ast * expr_ast
+  | And of expr_ast * expr_ast
+  | Or of expr_ast * expr_ast
+  | If of expr_ast * expr_ast * expr_ast
   [@@deriving knights]
+
+type stmt_ast = ExportDef of string * expr_ast
 
 let unary =
   let
@@ -111,13 +113,46 @@ and logical_expr_and () = chain1 (comparison_expr ()) andop
 
 and logical_expr_or () = chain1 (logical_expr_and ()) orop
 
+let letter = satisfy (fun c -> let code = Char.code c in (65 <= code && code <= 90) || (97 <= code && code <= 122))
+
+let digit = oneOf "0123456789"
+
+let rec string_of_chars = function
+  | [] -> ""
+  | c :: cs -> String.make 1 c ^ string_of_chars cs
+
+let identifier = (fun c cs -> string_of_chars (c :: cs)) <$> letter <*> (many (letter <|> digit))
+
+let export_def =
+  token "export"
+  >> spaces
+  >> identifier
+  >>= (fun ident ->
+    spaces_opt
+    >> char '='
+    >> spaces_opt
+    >> logical_expr_or ()
+    >>= (fun expr ->
+      spaces_opt
+      >> return @@ ExportDef (ident, expr)))
+
 exception Syntax_error
 
 let program src =
-  parse (spaces_opt >> logical_expr_or ()) src
+  let parser = option []
+    (spaces_opt
+    >> export_def
+    >>= (fun head ->
+      many (char ';' >> spaces_opt >> export_def)
+      >>= (fun tail ->
+        spaces_opt
+        >> option (' ') (char ';')
+        >> spaces_opt
+        >> return @@ head :: tail))) in
+  parse parser src
   |> List.filter (fun (_, rest) -> rest = "")
   |> (fun list ->
     if List.length list = 0
       then raise Syntax_error
-      else List.hd list
-    |> fst)
+      else List.hd list)
+    |> fst

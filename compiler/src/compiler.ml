@@ -23,6 +23,18 @@ let adjust_size size bytes =
           then bytes @ make_list lack 0
           else failwith "(adjust_arr_length) Invalid format"
 
+open Parser
+
+let checkDuplication =
+  let rec inner checked = function
+    | [] -> ()
+    | ExportDef (name, _) :: tail ->
+        if List.mem name checked
+          then (print_endline @@ "Error: duplicate export `" ^ name ^ "`"; exit (-1))
+          else inner (name :: checked) tail
+  in
+    inner []
+
 let header = Binary.to_uint32 1836278016 @ Binary.to_uint32 1
 
 let type_header =
@@ -38,27 +50,39 @@ let type_0 =
   ; 127 (* i32 *)
   ]
 
-let function_header =
-  [ 3 (* section code *)
-  ; 2 (* section size *)
-  ; 1 (* num functions *)
-  ; 0 (* function 0 signature index *)
-  ]
+let function_section ast =
+  let num_functions = List.length ast in
+    [ 3 (* section code *)
+    ; num_functions + 1 (* section size *)
+    ; num_functions (* num functions *)
+    ] @
+    List.init num_functions (fun _ -> 0 (* function 0 signature index *))
 
-let export =
-  [ 7 (* section code *)
-  ; 8 (* section size *)
-  ; 1 (* num exports *)
-  ; 4 (* string length *)
-  ] @
-  (List.map Base.Char.to_int @@ Base.String.to_list "main") @
-  [ 0 (* export kind *)
-  ; 0 (* export func index *)
-  ]
+let ( <.> ) f g x = f @@ g x
 
-let code ast =
+let concatMap f = List.(concat <.> map f)
+
+let export stmt_ast =
+  let export_sig =
+    let export_func_index = ref (-1) in
+    stmt_ast
+      |> concatMap (function ExportDef (name, _) ->
+        export_func_index := !export_func_index + 1;
+        String.length name :: (* string length *)
+        (List.map Base.Char.to_int @@ Base.String.to_list name) @ (* export name *)
+        [ 0 (* export kind *)
+        ; !export_func_index
+        ])
+  in
+  let num_exports = Binary.leb128_of_int @@ List.length stmt_ast in
+    7 :: (* section code *)
+    List.length export_sig + List.length num_exports :: (* section size *)
+    num_exports @
+    export_sig
+
+let function_body expr_ast =
   let max = ref (-1) in
-  let instructions = Ir.instructions_of_ir (Ir.ir_of_ast ast, -1, max) @ [ 11 (* end *)] in
+  let instructions = (Ir.instructions_of_ir (Ir.ir_of_ast expr_ast) max) @ [ 11 (* end *)] in
   let local_decl_count = !max + 1 in
   let decl =
     (if local_decl_count > 0
@@ -69,27 +93,33 @@ let code ast =
       else
         [0 (* local decl count *)]) @
     instructions in
-  let body = (Binary.leb128_of_int @@ List.length decl) @ decl in
-    10 :: (* section code *)
-    Binary.leb128_of_int (1 + List.length body) @ (* section size *)
-    [ 1 (* num functions *)
-    ] @
-    body
+  (Binary.leb128_of_int @@ List.length decl) @ decl
 
-open Parser
+let code stmt_ast =
+  let function_code =
+    stmt_ast
+      |> concatMap (function ExportDef (_, expr_ast) -> function_body expr_ast)
+  in
+  let num_functions = Binary.leb128_of_int @@ List.length stmt_ast in
+    10 :: (* section code *)
+    List.length num_functions + List.length function_code :: (* section size *)
+    num_functions @
+    function_code
 
 let () =
   let compile src =
     let ast = program src in
-    let out = open_out "out.wasm" in
-      write out @@
-        header
-        @ type_header
-        @ type_0
-        @ function_header
-        @ export
-        @ code ast;
-      close_out out in
+      checkDuplication ast;
+      let out = open_out "out.wasm" in
+        write out @@
+          header
+          @ type_header
+          @ type_0
+          @ function_section ast
+          @ export ast
+          @ code ast;
+        close_out out
+  in
   let repl () =
     while true do
       try
