@@ -62,9 +62,52 @@ let andop = token "&&" >> return (fun lhs rhs -> And (lhs, rhs))
 
 let orop = token "||" >> return (fun lhs rhs -> Or (lhs, rhs))
 
-let spaces = Lazy.force @@ some @@ oneOf " \t\n"
+exception Syntax_error
 
-let spaces_opt = many @@ oneOf " \t\n"
+exception Out_of_loop of int
+
+let comment =
+  token "(*"
+  >> MParser (fun src ->
+    (let idx = ref (-1) in
+    let nests = ref 1 in
+    let asterisk = ref false in
+    let left_parenthesis = ref false in
+      try
+        for index = 0 to (String.length src - 1) do
+          let c = String.get src index in
+            begin match c with
+              | '(' ->
+                  begin
+                    if !asterisk then asterisk := false;
+                    if !left_parenthesis = false then left_parenthesis := true;
+                  end
+              | '*' ->
+                  begin
+                    if !asterisk = false then asterisk := true;
+                    if !left_parenthesis then (nests := !nests + 1; left_parenthesis := false)
+                  end
+              | ')' ->
+                  begin
+                    if !asterisk then (nests := !nests - 1; asterisk := false);
+                    if !left_parenthesis then left_parenthesis := false
+                  end
+              | _ ->
+                begin
+                  if !asterisk then asterisk := false;
+                  if !left_parenthesis then left_parenthesis := false
+                end
+            end;
+            if !nests = 0 then raise @@ Out_of_loop index;
+        done;
+        raise Syntax_error
+      with
+        Out_of_loop i -> (idx := i);
+      [(' ', String.sub src (!idx + 1) (String.length src - !idx - 1))]))
+
+let spaces = Lazy.force @@ some @@ (oneOf " \t\n" <|> comment)
+
+let spaces_opt = many @@ (oneOf " \t\n" <|> comment)
 
 let chain1 p op =
   let rec rest a =
@@ -155,10 +198,8 @@ let export_def =
       spaces_opt
       >> return @@ ExportDef (ident, expr)))
 
-exception Syntax_error
-
 let program src =
-  let parser = option []
+  let parser =
     (spaces_opt
     >> export_def
     >>= (fun head ->
@@ -167,11 +208,13 @@ let program src =
         spaces_opt
         >> option (' ') (char ';')
         >> spaces_opt
-        >> return @@ head :: tail))) in
-  parse parser src
-  |> List.filter (fun (_, rest) -> rest = "")
-  |> (fun list ->
-    if List.length list = 0
-      then raise Syntax_error
-      else List.hd list)
-    |> fst
+        >> return @@ head :: tail)))
+    <|> (spaces_opt >> return [])
+  in
+    parse parser src
+    |> List.filter (fun (_, rest) -> rest = "")
+    |> (fun list ->
+      if List.length list = 0
+        then raise Syntax_error
+        else List.hd list)
+      |> fst
