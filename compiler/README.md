@@ -92,15 +92,6 @@ The value is assigned when the program is initialized.
 Reassigning to the constant is forbidden.  
 This feature will be implemented using global variables of WASM.
 
-### Let Expressions
-
-```text
-let
-  n = 3
-in
-  4 + n
-```
-
 ### Functions
 
 #### Function definitions
