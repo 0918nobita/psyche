@@ -69,7 +69,7 @@ exception Out_of_loop of int
 let comment =
   token "(*"
   >> MParser (fun src ->
-    (let idx = ref (-1) in
+    let idx = ref (-1) in
     let nests = ref 1 in
     let asterisk = ref false in
     let left_parenthesis = ref false in
@@ -103,7 +103,7 @@ let comment =
         raise Syntax_error
       with
         Out_of_loop i -> (idx := i);
-      [(' ', String.sub src (!idx + 1) (String.length src - !idx - 1))]))
+      [(' ', String.sub src (!idx + 1) (String.length src - !idx - 1))])
 
 let spaces = Lazy.force @@ some @@ (oneOf " \t\n" <|> comment)
 
