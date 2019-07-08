@@ -20,48 +20,53 @@ type instruction =
   | I32Load
   | I32Store
 
+type context = {
+  env : (string * int) list ;
+  allocated_addr : int
+}
+
 let insts_of_expr_ast ast =
-  let rec inner (expr_ast, env) = match expr_ast with
+  let rec inner (expr_ast, ctx) = match expr_ast with
     | IntLiteral n -> [I32Const n]
     | Minus (expr) ->
-        inner (expr, env) @ [I32Const (-1); I32Mul]
+        inner (expr, ctx) @ [I32Const (-1); I32Mul]
     | Add (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Add]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Add]
     | Sub (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Sub]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Sub]
     | Mul (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Mul]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Mul]
     | Div (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32DivS]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32DivS]
     | Eq (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Eq]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Eq]
     | Ne (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Ne]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Ne]
     | Greater (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Gt]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Gt]
     | GreaterE (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Ge]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Ge]
     | Less (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Lt]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Lt]
     | LessE (lhs, rhs) ->
-        inner (lhs, env) @ inner (rhs, env) @ [I32Le]
+        inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Le]
     | And (lhs, rhs) ->
-        inner (lhs, env) @ [I32Eqz; I32If ([I32Const 0], inner (rhs, env))]
+        inner (lhs, ctx) @ [I32Eqz; I32If ([I32Const 0], inner (rhs, ctx))]
     | Or (lhs, rhs) ->
-        inner (lhs, env) @ [I32Local [TeeLocal 0; I32Eqz; I32If (inner (rhs, env), [GetLocal 0])]]
+        inner (lhs, ctx) @ [I32Local [TeeLocal 0; I32Eqz; I32If (inner (rhs, ctx), [GetLocal 0])]]
     | If (cond, t, e) ->
-        inner (cond, env) @ [I32Eqz; I32If (inner (e, env), inner (t, env))]
+        inner (cond, ctx) @ [I32Eqz; I32If (inner (e, ctx), inner (t, ctx))]
     | Let (ident, bound_expr, expr) ->
-        let reserved_addr = snd env + 1 in
-        let env_for_bound_expr = (fst env, reserved_addr) in
-        let env_for_expr = ((ident, reserved_addr) :: fst env, reserved_addr) in
-          I32Const (reserved_addr * 4) ::
-          inner (bound_expr, env_for_bound_expr) @
+        let allocated_addr = ctx.allocated_addr + 1 in
+        let ctx_for_bound_expr = { ctx with allocated_addr } in
+        let ctx_for_expr = { env = (ident, allocated_addr) :: ctx.env; allocated_addr } in
+          I32Const (allocated_addr * 4) ::
+          inner (bound_expr, ctx_for_bound_expr) @
           [I32Store] @
-          inner (expr, env_for_expr)
+          inner (expr, ctx_for_expr)
     | Ident name ->
         let addrs =
-          fst env
+          ctx.env
             |> List.filter (fun elem -> fst elem = name)
             |> List.map snd
         in
@@ -69,7 +74,7 @@ let insts_of_expr_ast ast =
             then (print_endline @@ "Error: unbound value `" ^ name ^ "`"; exit (-1))
             else [I32Const (List.hd addrs * 4); I32Load]
   in
-    inner (ast, ([], -1))
+    inner (ast, { env = []; allocated_addr = -1 })
 
 let bin_of_insts irs max =
   let rec inner (irs, current, max) = match irs with
