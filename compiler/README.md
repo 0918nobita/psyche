@@ -65,12 +65,6 @@ export main = 1 + 2 * if 3 < 0 then 4 else 5 + 6
 
 ## Proposals
 
-### Comments
-
-```text
-(* comment *)
-```
-
 ### Constants
 
 #### Code example
