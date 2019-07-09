@@ -1,8 +1,12 @@
 val ( <.> ) : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
 
-type 'a parser = MParser of (string -> ('a * string) list)
+type location = { line : int; chr : int }
 
-val parse : 'a parser -> string -> ('a * string) list
+type 'a result = { ast : 'a; loc : location; rest : string }
+
+type 'a parser = MParser of (string -> 'a result list)
+
+val parse : 'a parser -> string -> 'a result list
 
 val token : string -> string parser
 

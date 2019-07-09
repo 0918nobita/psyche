@@ -62,13 +62,16 @@ let andop = token "&&" >> return (fun lhs rhs -> And (lhs, rhs))
 
 let orop = token "||" >> return (fun lhs rhs -> Or (lhs, rhs))
 
-exception Syntax_error
+exception Syntax_error of location
 
-exception Out_of_loop of int
+exception Out_of_loop of int * location
 
 let comment =
   token "(*"
   >> MParser (fun src ->
+    let loc = ref { line = 0; chr = 0 } in
+    let line = ref 0 in
+    let chr = ref 0 in
     let idx = ref (-1) in
     let nests = ref 1 in
     let asterisk = ref false in
@@ -94,16 +97,17 @@ let comment =
                   end
               | _ ->
                 begin
+                  if c = '\n' then (line := !line + 1; chr := 0) else chr := !chr + 1;
                   if !asterisk then asterisk := false;
                   if !left_parenthesis then left_parenthesis := false
                 end
             end;
-            if !nests = 0 then raise @@ Out_of_loop index;
+            if !nests = 0 then raise @@ Out_of_loop (index, { line = !line; chr = !chr });
         done;
-        raise Syntax_error
+        raise @@ Syntax_error { line = !line; chr = !chr }
       with
-        Out_of_loop i -> (idx := i);
-      [(' ', String.sub src (!idx + 1) (String.length src - !idx - 1))])
+        Out_of_loop (i, location) -> (idx := i; loc := location);
+      [{ ast = ' '; loc = !loc; rest = String.sub src (!idx + 1) (String.length src - !idx - 1)}])
 
 let spaces = Lazy.force @@ some @@ (oneOf " \t\n" <|> comment)
 
@@ -211,10 +215,8 @@ let program src =
         >> return @@ head :: tail)))
     <|> (spaces_opt >> return [])
   in
-    parse parser src
-    |> List.filter (fun (_, rest) -> rest = "")
-    |> (fun list ->
-      if List.length list = 0
-        then raise Syntax_error
-        else List.hd list)
-      |> fst
+  begin
+    let result = parse parser src in
+    result |> List.iter (function { ast = _; loc; rest } when rest <> "" -> raise @@ Syntax_error loc | _ -> ());
+    (List.hd result).ast;
+  end

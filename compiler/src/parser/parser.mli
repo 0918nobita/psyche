@@ -19,6 +19,6 @@ type expr_ast =
 
 type stmt_ast = ExportDef of string * expr_ast
 
-exception Syntax_error
+exception Syntax_error of Parser_combinator.location
 
 val program : string -> stmt_ast list

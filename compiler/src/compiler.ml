@@ -4,7 +4,7 @@ let read filename =
     str = ref ""
   in
     (try
-      while true do str := !str ^ input_line f done;
+      while true do str := !str ^ input_line f ^ "\n" done;
     with
       _ -> ());
     close_in f;
@@ -139,7 +139,8 @@ let () =
           | 0 -> ()
           | _ -> failwith "wasm-interp との連携に失敗しました"
       with
-        Parser.Syntax_error -> print_endline "Syntax Error"
+        Syntax_error loc ->
+          print_endline @@ string_of_int (loc.line + 1) ^ ":" ^ string_of_int (loc.chr + 1) ^ ": Syntax Error"
     done in
   if Array.length Sys.argv = 1
     then
@@ -158,7 +159,16 @@ let () =
             repl ()
         | "make" ->
             if Array.length Sys.argv >= 3
-              then compile @@ read @@ Sys.argv.(2)
-              else (print_endline "Source files were not provided"; exit (-1))
+              then
+                try
+                  compile @@ read @@ Sys.argv.(2)
+                with
+                  Syntax_error loc ->
+                    begin
+                      print_endline @@ string_of_int (loc.line + 1) ^ ":" ^ string_of_int (loc.chr + 1) ^ ": Syntax Error"; 
+                      exit (-1)
+                    end
+              else
+                (print_endline "Source files were not provided"; exit (-1))
         | str ->
             (print_endline @@ "Invalid subcommand: " ^ str; exit (-1))
