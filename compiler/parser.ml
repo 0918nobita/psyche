@@ -1,7 +1,7 @@
 open Parser_combinator
 
 type expr_ast =
-  | IntLiteral of int
+  | IntLiteral of location * int
   | Ident of string
   | Minus of expr_ast
   | Add of expr_ast * expr_ast
@@ -47,7 +47,13 @@ let integer =
     digit = (fun c -> c - 48) <.> int_of_char <$> oneOf "0123456789" and
     toNum x acc = x * 10 + acc
   in
-    (fun n -> IntLiteral n) <.> (List.fold_left toNum 0) <$> Lazy.force @@ some digit
+    (* (fun n -> IntLiteral n) <.> (List.fold_left toNum 0) <$> Lazy.force @@ some digit *)
+    MParser (fun src ->
+      let result = parse (Lazy.force @@ some digit) src in
+        result
+        |> List.map (function { ast; loc; rest } ->
+          let n = List.fold_left toNum 0 ast in
+            { ast = IntLiteral (loc, n); loc; rest }))
 
 let cmpop =
   (token "==" >> return (fun lhs rhs -> Eq (lhs, rhs)))

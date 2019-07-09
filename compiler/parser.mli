@@ -1,5 +1,5 @@
 type expr_ast =
-  | IntLiteral of int
+  | IntLiteral of Parser_combinator.location * int
   | Ident of string
   | Minus of expr_ast
   | Add of expr_ast * expr_ast

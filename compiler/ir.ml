@@ -27,7 +27,7 @@ type context = {
 
 let insts_of_expr_ast ast =
   let rec inner (expr_ast, ctx) = match expr_ast with
-    | IntLiteral n -> [I32Const n]
+    | IntLiteral (_, n) -> [I32Const n]
     | Minus (expr) ->
         inner (expr, ctx) @ [I32Const (-1); I32Mul]
     | Add (lhs, rhs) ->
