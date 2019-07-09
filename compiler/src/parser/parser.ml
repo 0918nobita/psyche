@@ -217,6 +217,9 @@ let program src =
   in
   begin
     let result = parse parser src in
-    result |> List.iter (function { ast = _; loc; rest } when rest <> "" -> raise @@ Syntax_error loc | _ -> ());
+    result
+    |> List.iter (function
+      | { ast = _; loc; rest } when rest <> "" -> raise @@ Syntax_error loc
+      | _ -> ());
     (List.hd result).ast;
   end
