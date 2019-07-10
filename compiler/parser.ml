@@ -72,13 +72,12 @@ exception Out_of_loop of int * location
 let comment =
   token "(*"
   >> MParser (fun src ->
-    let loc = ref bof in
     let line = ref 0 in
     let chr = ref 0 in
-    let idx = ref (-1) in
     let nests = ref 1 in
     let asterisk = ref false in
     let left_parenthesis = ref false in
+    let (idx, loc) =
       try
         for index = 0 to (String.length src - 1) do
           let c = String.get src index in
@@ -109,8 +108,9 @@ let comment =
         done;
         raise @@ Syntax_error { line = !line; chr = !chr }
       with
-        Out_of_loop (i, location) -> (idx := i; loc := location);
-      [{ ast = ' '; loc = !loc; rest = String.sub src (!idx + 1) (String.length src - !idx - 1)}])
+        Out_of_loop (i, location) -> (i, location)
+      in
+      [{ ast = ' '; loc; rest = String.sub src (idx + 1) (String.length src - idx - 1)}])
 
 let spaces = Lazy.force @@ some @@ (oneOf " \t\n" <|> comment)
 
