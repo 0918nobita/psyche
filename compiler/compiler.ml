@@ -28,9 +28,9 @@ open Parser
 let checkDuplication =
   let rec inner checked = function
     | [] -> ()
-    | ExportDef (name, _) :: tail ->
+    | ExportDef (loc, name, _) :: tail ->
         if List.mem name checked
-          then (print_endline @@ "Error: duplicate export `" ^ name ^ "`"; exit (-1))
+          then (print_endline @@ string_of_int loc.line ^ ":" ^ string_of_int loc.chr ^ ": Duplicate export `" ^ name ^ "`"; exit (-1))
           else inner (name :: checked) tail
   in
     inner []
@@ -74,7 +74,7 @@ let export stmt_ast =
   let export_sig =
     let export_func_index = ref (-1) in
     stmt_ast
-      |> concatMap (function ExportDef (name, _) ->
+      |> concatMap (function ExportDef (_, name, _) ->
         export_func_index := !export_func_index + 1;
         String.length name :: (* string length *)
         (List.map Base.Char.to_int @@ Base.String.to_list name) @ (* export name *)
@@ -106,7 +106,7 @@ let function_body expr_ast =
 let code stmt_ast =
   let function_code =
     stmt_ast
-      |> concatMap (function ExportDef (_, expr_ast) -> function_body expr_ast)
+      |> concatMap (function ExportDef (_, _, expr_ast) -> function_body expr_ast)
   in
   let num_functions = Binary.leb128_of_int @@ List.length stmt_ast in
     10 :: (* section code *)

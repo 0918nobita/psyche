@@ -28,35 +28,35 @@ type context = {
 let insts_of_expr_ast ast =
   let rec inner (expr_ast, ctx) = match expr_ast with
     | IntLiteral (_, n) -> [I32Const n]
-    | Minus (expr) ->
+    | Minus (_, expr) ->
         inner (expr, ctx) @ [I32Const (-1); I32Mul]
-    | Add (lhs, rhs) ->
+    | Add (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Add]
-    | Sub (lhs, rhs) ->
+    | Sub (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Sub]
-    | Mul (lhs, rhs) ->
+    | Mul (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Mul]
-    | Div (lhs, rhs) ->
+    | Div (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32DivS]
-    | Eq (lhs, rhs) ->
+    | Eq (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Eq]
-    | Ne (lhs, rhs) ->
+    | Ne (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Ne]
-    | Greater (lhs, rhs) ->
+    | Greater (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Gt]
-    | GreaterE (lhs, rhs) ->
+    | GreaterE (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Ge]
-    | Less (lhs, rhs) ->
+    | Less (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Lt]
-    | LessE (lhs, rhs) ->
+    | LessE (_, lhs, rhs) ->
         inner (lhs, ctx) @ inner (rhs, ctx) @ [I32Le]
-    | And (lhs, rhs) ->
+    | And (_, lhs, rhs) ->
         inner (lhs, ctx) @ [I32Eqz; I32If ([I32Const 0], inner (rhs, ctx))]
-    | Or (lhs, rhs) ->
+    | Or (_, lhs, rhs) ->
         inner (lhs, ctx) @ [I32Local [TeeLocal 0; I32Eqz; I32If (inner (rhs, ctx), [GetLocal 0])]]
-    | If (cond, t, e) ->
+    | If (_, cond, t, e) ->
         inner (cond, ctx) @ [I32Eqz; I32If (inner (e, ctx), inner (t, ctx))]
-    | Let (ident, bound_expr, expr) ->
+    | Let (_, ident, bound_expr, expr) ->
         let allocated_addr = ctx.allocated_addr + 1 in
         let ctx_for_bound_expr = { ctx with allocated_addr } in
         let ctx_for_expr = { env = (ident, allocated_addr) :: ctx.env; allocated_addr } in
@@ -64,7 +64,7 @@ let insts_of_expr_ast ast =
           inner (bound_expr, ctx_for_bound_expr) @
           [I32Store] @
           inner (expr, ctx_for_expr)
-    | Ident name ->
+    | Ident (_, name) ->
         let addrs =
           ctx.env
             |> List.filter (fun elem -> fst elem = name)
