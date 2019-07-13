@@ -25,22 +25,22 @@ let bof = { line = 0; chr = 0 }
 
 let unary =
   let
-    plus = char '+' >> return (fun x -> x) and
-    minus = char '-' >> return (fun ast -> Minus (bof, ast))
+    plus = char '+' >> (fun _ -> return (fun x -> x)) and
+    minus = char '-' >> (fun _ -> return (fun ast -> Minus (bof, ast)))
   in
     plus <|> minus <|> return (fun x -> x)
 
 let addop =
   let
-    add = char '+' >> return (fun lhs rhs -> Add (bof, lhs, rhs)) and
-    sub = char '-' >> return (fun lhs rhs -> Sub (bof, lhs, rhs))
+    add = char '+' >> (fun _ -> return (fun lhs rhs -> Add (bof, lhs, rhs))) and
+    sub = char '-' >> (fun _ -> return (fun lhs rhs -> Sub (bof, lhs, rhs)))
   in
     add <|> sub
 
 let mulop =
   let
-    mul = char '*' >> return (fun lhs rhs -> Mul (bof, lhs, rhs)) and
-    div = char '/' >> return (fun lhs rhs -> Div (bof, lhs, rhs))
+    mul = char '*' >> (fun _ -> return (fun lhs rhs -> Mul (bof, lhs, rhs))) and
+    div = char '/' >> (fun _ -> return (fun lhs rhs -> Div (bof, lhs, rhs)))
   in
     mul <|> div
 
@@ -54,16 +54,16 @@ let integer =
     <$> Lazy.force @@ some digit
 
 let cmpop =
-  (token "==" >> return (fun lhs rhs -> Eq (bof, lhs, rhs)))
-  <|> (token "!=" >> return (fun lhs rhs -> Ne (bof, lhs, rhs)))
-  <|> (token "<=" >> return (fun lhs rhs -> LessE (bof, lhs, rhs)))
-  <|> (token "<"  >> return (fun lhs rhs -> Less (bof, lhs, rhs)))
-  <|> (token ">=" >> return (fun lhs rhs -> GreaterE (bof, lhs, rhs)))
-  <|> (token ">"  >> return (fun lhs rhs -> Greater (bof, lhs, rhs)))
+  (token "==" >> (fun _ -> return (fun lhs rhs -> Eq (bof, lhs, rhs))))
+  <|> (token "!=" >> (fun _ -> return (fun lhs rhs -> Ne (bof, lhs, rhs))))
+  <|> (token "<=" >> (fun _ -> return (fun lhs rhs -> LessE (bof, lhs, rhs))))
+  <|> (token "<"  >> (fun _ -> return (fun lhs rhs -> Less (bof, lhs, rhs))))
+  <|> (token ">=" >> (fun _ -> return (fun lhs rhs -> GreaterE (bof, lhs, rhs))))
+  <|> (token ">"  >> (fun _ -> return (fun lhs rhs -> Greater (bof, lhs, rhs))))
 
-let andop = token "&&" >> return (fun lhs rhs -> And (bof, lhs, rhs))
+let andop = token "&&" >> (fun _ -> return (fun lhs rhs -> And (bof, lhs, rhs)))
 
-let orop = token "||" >> return (fun lhs rhs -> Or (bof, lhs, rhs))
+let orop = token "||" >> (fun _ -> return (fun lhs rhs -> Or (bof, lhs, rhs)))
 
 exception Syntax_error of location
 
@@ -71,7 +71,7 @@ exception Out_of_loop of int * location
 
 let comment =
   token "(*"
-  >> MParser (fun src ->
+  >> (fun _ -> MParser (fun src ->
     let line = ref 0 in
     let chr = ref 0 in
     let nests = ref 1 in
@@ -110,22 +110,22 @@ let comment =
       with
         Out_of_loop (i, location) -> (i, location)
       in
-      [{ ast = ' '; loc; rest = String.sub src (idx + 1) (String.length src - idx - 1)}])
+      [{ ast = ' '; loc; rest = String.sub src (idx + 1) (String.length src - idx - 1)}]))
 
 let spaces = Lazy.force @@ some @@ (oneOf " \t\n" <|> comment)
 
 let spaces_opt = many @@ (oneOf " \t\n" <|> comment)
 
-let chain1 p op =
-  let rec rest a =
+let chain1 base_loc p op =
+  let rec rest ~loc:_ a =
       (spaces_opt
-      >> ((fun f b -> f a b) <$> op <*> (spaces_opt >> p) >>= rest))
+      >> (fun loc -> ((fun f b -> f a b) <$> op <*> (spaces_opt >> p) >>= rest)))
     <|>
       return a
   in
-    p
+    p base_loc
     >>= rest
-    >>= (fun ast -> spaces_opt >> return ast)
+    >>= (fun ~loc:_ ast -> spaces_opt >> (fun _ -> return ast))
 
 let letter = satisfy (fun c ->
   let code = Char.code c in
@@ -139,86 +139,86 @@ let rec string_of_chars = function
 
 let identifier = (fun c cs -> string_of_chars (c :: cs)) <$> letter <*> (many (letter <|> digit))
 
-let rec factor () =
+let rec factor base_loc =
   let if_expr = MParser (fun src ->
     parse (
       token "if"
-      >> spaces
-      >> logical_expr_or ()
-      >>= (fun ast ->
+      >> (fun _ -> spaces
+      >> logical_expr_or
+      >>= (fun ~loc ast ->
         spaces_opt
-        >> token "then"
-        >> spaces
-        >> logical_expr_or ()
-        >>= (fun then_clause ->
+        >> (fun _ -> token "then"
+        >> (fun _ -> spaces
+        >> logical_expr_or
+        >>= (fun ~loc:_ then_clause ->
           spaces_opt
-          >> token "else"
-          >> spaces
-          >> logical_expr_or ()
-          >>= (fun else_clause ->
+          >> (fun _ -> token "else"
+          >> (fun _ -> spaces
+          >> logical_expr_or
+          >>= (fun ~loc:_ else_clause ->
             spaces_opt
-            >> return @@ If (bof, ast, then_clause, else_clause))))) src)
+            >> (fun _ -> return @@ If (bof, ast, then_clause, else_clause))))))))))) src)
   in
   let let_expr = MParser (fun src ->
     parse (
       token "let"
-      >> spaces
-      >> identifier
-      >>= (fun ident ->
+      >> (fun _ -> spaces
+      >> (fun _ -> identifier
+      >>= (fun ~loc:_ ident ->
         spaces_opt
-        >> char '='
-        >> spaces_opt
-        >> logical_expr_or ()
-        >>= (fun bound_expr ->
+        >> (fun _ -> char '='
+        >> (fun _ -> spaces_opt
+        >> logical_expr_or
+        >>= (fun ~loc:_ bound_expr ->
           token "in"
-          >> spaces
-          >> logical_expr_or ()
-          >>= (fun expr ->
-            return @@ Let (bof, ident, bound_expr, expr))))) src)
+          >> (fun _ -> spaces
+          >> logical_expr_or
+          >>= (fun ~loc:_ expr ->
+            return @@ Let (bof, ident, bound_expr, expr)))))))))) src)
   in
     MParser (fun src ->
       parse (
         integer
-        <|> (char '(' >> (logical_expr_or () >>= (fun c -> char ')' >> return c)))
+        <|> (char '(' >> (fun loc -> (logical_expr_or loc >>= (fun ~loc:_ c -> char ')' >> (fun _ -> return c)))))
         <|> if_expr
         <|> let_expr
-        <|> (identifier >>= (fun name -> return @@ Ident (bof, name)))) src)
+        <|> (identifier >>= (fun ~loc:_ name -> return @@ Ident (bof, name)))) src)
 
-and term () = chain1 (factor ()) mulop
+and term base_loc = chain1 base_loc (fun loc -> factor loc) mulop
 
-and arithmetic_expr () = (fun op n -> op n) <$> unary <*> chain1 (term ()) addop
+and arithmetic_expr base_loc = (fun op n -> op n) <$> unary <*> chain1 base_loc term addop
 
-and comparison_expr () = chain1 (arithmetic_expr ()) cmpop
+and comparison_expr base_loc = chain1 base_loc arithmetic_expr cmpop
 
-and logical_expr_and () = chain1 (comparison_expr ()) andop
+and logical_expr_and base_loc = chain1 base_loc comparison_expr andop
 
-and logical_expr_or () = chain1 (logical_expr_and ()) orop
+and logical_expr_or base_loc = chain1 base_loc logical_expr_and orop
 
 let export_def =
   token "export"
-  >> spaces
-  >> identifier
-  >>= (fun ident ->
+  >> (fun _ -> spaces
+  >> (fun _ -> identifier
+  >>= (fun ~loc:_ ident ->
     spaces_opt
-    >> char '='
-    >> spaces_opt
-    >> logical_expr_or ()
-    >>= (fun expr ->
+    >> (fun _ -> char '='
+    >> (fun _ -> spaces_opt
+    >> logical_expr_or
+    >>= (fun ~loc:_ expr ->
       spaces_opt
-      >> return @@ ExportDef (bof, ident, expr)))
+      >> (fun _ -> return @@ ExportDef (bof, ident, expr))))))))
 
 let program src =
   let parser =
     (spaces_opt
-    >> export_def
-    >>= (fun head ->
-      many (char ';' >> spaces_opt >> export_def)
-      >>= (fun tail ->
+    >> (fun _ -> export_def
+    >>= (fun ~loc:_ head ->
+      many (char ';' >> (fun _ -> spaces_opt >> (fun _ -> export_def)))
+      >>= (fun ~loc:_ tail ->
         spaces_opt
-        >> option (' ') (char ';')
-        >> spaces_opt
-        >> return @@ head :: tail)))
-    <|> (spaces_opt >> return [])
+        >> (fun _ -> option (' ') (char ';')
+        >> (fun _ -> spaces_opt
+        >> (fun _ -> return @@ head :: tail))))))
+    <|> (spaces_opt >> (fun _ -> return [])))
   in
   begin
     let result = parse parser src in

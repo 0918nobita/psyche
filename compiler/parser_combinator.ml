@@ -69,9 +69,9 @@ let ( >>= ) p f =
   MParser (fun src ->
     parse p src
     |> concatMap (function { ast; loc = base_loc; rest } ->
-      parse (start_from base_loc (f ast)) rest))
+      parse (start_from base_loc (f ~loc:base_loc ast)) rest))
 
-let ( >> ) m f = m >>= fun _ -> f
+let ( >> ) m f = m >>= fun ~loc _ -> f loc
 
 let mzero = MParser (fun _ -> [])
 
@@ -95,7 +95,7 @@ let item = MParser (function
       rest = String.(sub s 1 (length s - 1))
     }])
 
-let satisfy f = item >>= (fun ast -> if f ast then return ast else mzero)
+let satisfy f = item >>= (fun ~loc:_ ast -> if f ast then return ast else mzero)
 
 let char c = satisfy ((==) c)
 
@@ -103,8 +103,8 @@ let oneOf cs = satisfy (String.contains cs)
 
 let option default p = p <|> return default
 
-let (<~>) p q = p >>= fun r -> q >>= fun rs -> return (r :: rs)
+let (<~>) p q = p >>= fun ~loc:_ r -> q >>= fun ~loc:_ rs -> return (r :: rs)
 
-let rec many p = option [] (p >>= fun r -> many p >>= fun rs -> return (r :: rs))
+let rec many p = option [] (p >>= fun ~loc:_ r -> many p >>= fun ~loc:_ rs -> return (r :: rs))
 
 let some p = lazy (p <~> many p)
