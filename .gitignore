@@ -7,4 +7,3 @@ node_modules
 *.cma
 *.wasm
 *.install
-_build
