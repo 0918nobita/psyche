@@ -7,6 +7,15 @@ build:
 		binary.ml parser_combinator.ml parser.ml ir.ml compiler.ml
 	rm -f *.cmx *.o
 
+for-debugging:
+	mkdir -p _build
+	ocamlfind ocamlc \
+		-g \
+		-o _build/psyche \
+		-linkpkg -package base \
+		binary.ml parser_combinator.ml parser.ml ir.ml compiler.ml
+	rm -f *.cmo
+
 clean:
 	rm -rf _build
 	rm -f *.cmi
