@@ -1,4 +1,0 @@
-(executable
-  (name compiler)
-  (public_name psyche)
-  (libraries base parser ir))

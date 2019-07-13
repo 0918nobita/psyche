@@ -1,3 +1,0 @@
-export foo = 7;
-
-export foo = 42;
