@@ -69,13 +69,7 @@ let ( >>= ) p f =
   MParser (fun src ->
     parse p src
     |> concatMap (function { ast; loc = base_loc; rest } ->
-      parse (f ast) rest
-      |> List.map (function { ast; loc = diff_loc; rest } ->
-        {
-          ast;
-          loc = update_loc base_loc diff_loc;
-          rest
-        })))
+      parse (start_from base_loc (f ast)) rest))
 
 let ( >> ) m f = m >>= fun _ -> f
 
