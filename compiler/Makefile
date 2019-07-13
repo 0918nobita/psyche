@@ -9,6 +9,7 @@ build:
 
 for-toplevel:
 	mkdir -p _build
+	ocamlc -c binary.mli parser_combinator.mli parser.mli ir.mli
 	ocamlfind ocamlc \
 		-o _build/psyche \
 		-linkpkg -package base \
@@ -16,6 +17,7 @@ for-toplevel:
 
 for-debugging:
 	mkdir -p _build
+	ocamlc -c binary.mli parser_combinator.mli parser.mli ir.mli
 	ocamlfind ocamlc \
 		-g \
 		-o _build/psyche \
