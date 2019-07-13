@@ -44,12 +44,12 @@ let mulop =
   in
     mul <|> div
 
-let integer =
+let integer base_loc =
   let
     digit = (fun c -> c - 48) <.> int_of_char <$> oneOf "0123456789" and
     toNum x acc = x * 10 + acc
   in
-    (fun n -> IntLiteral (bof, n))
+    (fun n -> IntLiteral (base_loc, n))
     <.> (List.fold_left toNum 0)
     <$> Lazy.force @@ some digit
 
@@ -178,7 +178,7 @@ let rec factor base_loc =
   in
     MParser (fun src ->
       parse (
-        integer
+        integer base_loc
         <|> (char '(' >> (fun loc -> (logical_expr_or loc >>= (fun ~loc:_ c -> char ')' >> (fun _ -> return c)))))
         <|> if_expr
         <|> let_expr
