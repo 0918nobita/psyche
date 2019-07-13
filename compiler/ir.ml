@@ -64,14 +64,14 @@ let insts_of_expr_ast ast =
           inner (bound_expr, ctx_for_bound_expr) @
           [I32Store] @
           inner (expr, ctx_for_expr)
-    | Ident (_, name) ->
+    | Ident (loc, name) ->
         let addrs =
           ctx.env
             |> List.filter (fun elem -> fst elem = name)
             |> List.map snd
         in
           if List.length addrs = 0
-            then (print_endline @@ "Error: unbound value `" ^ name ^ "`"; exit (-1))
+            then (print_endline @@ string_of_loc loc ^ ": unbound value `" ^ name ^ "`"; exit (-1))
             else [I32Const (List.hd addrs * 4); I32Load]
   in
     inner (ast, { env = []; allocated_addr = -1 })
