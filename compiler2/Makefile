@@ -6,3 +6,7 @@ build:
 		-linkpkg -package base \
 		binary.ml parser_combinator.ml parser.ml ir.ml compiler.ml
 	rm -f *.cmx *.o
+
+clean:
+	rm -rf _build
+	rm -f *.cmi
