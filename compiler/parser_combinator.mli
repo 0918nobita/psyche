@@ -2,6 +2,8 @@ val ( <.> ) : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
 
 type location = { line : int; chr : int }
 
+val string_of_loc : location -> string
+
 type 'a result = { ast : 'a; loc : location; rest : string }
 
 type 'a parser = MParser of (string -> 'a result list)

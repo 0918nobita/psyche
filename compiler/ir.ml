@@ -1,5 +1,7 @@
 open Parser
 
+open Parser_combinator
+
 type instruction =
   | I32Const of int
   | I32Add

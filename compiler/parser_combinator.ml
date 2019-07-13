@@ -9,6 +9,8 @@ let concatMap f = List.(concat <.> map f)
 
 type location = { line : int; chr : int }
 
+let string_of_loc loc = string_of_int (loc.line + 1) ^ ":" ^ string_of_int (loc.chr + 1)
+
 type 'a result = { ast : 'a; loc : location; rest : string }
 
 type 'a parser = MParser of (string -> 'a result list)
@@ -56,6 +58,12 @@ let ( <$> ) f p = MParser (fun src ->
     { ast = f ast; loc; rest }) @@ (parse p) src)
 
 let return ast = MParser (fun rest -> [{ ast; rest; loc = { line = 0; chr = 0 }}])
+
+let start_from base_loc p =
+  MParser (fun src ->
+    parse p src
+    |> List.map (function { ast; loc; rest } ->
+      { ast; loc = update_loc base_loc loc; rest }))
 
 let ( >>= ) p f =
   MParser (fun src ->
