@@ -1,0 +1,7 @@
+build:
+	ocamlopt -c binary.mli parser_combinator.mli parser.mli ir.mli
+	ocamlfind ocamlopt \
+		-o psyche \
+		-linkpkg -package base \
+		binary.ml parser_combinator.ml parser.ml ir.ml compiler.ml
+	rm -f *.cmx *.o
