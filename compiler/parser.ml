@@ -21,15 +21,24 @@ type expr_ast =
 
 type stmt_ast = ExportDef of location * string * expr_ast
 
-let bof = { line = 0; chr = 0 }
-
 let unary =
   let
-    plus = char '+' >> (fun _ -> return (fun x -> x)) and
-    minus = char '-' >> (fun _ -> return (fun ast -> Minus (bof, ast)))
+    plus = char '+' >> return (fun x -> x) and
+    minus = char '-' >>= (fun (loc, _) -> return (fun ast -> Minus (loc, ast)))
   in
     plus <|> minus <|> return (fun x -> x)
 
+let nat =
+  let
+    digit = (fun (_, c) -> int_of_char c - 48) <$> oneOf "0123456789" and
+    toNum x acc = x * 10 + acc
+  in
+  Parser (function (loc, _) as input ->
+    parse (some digit) input
+    |> List.map (fun result ->
+      { result with ast = IntLiteral (loc, List.fold_left toNum 0 result.ast) }))
+
+(*
 let addop =
   let
     add = char '+' >> (fun _ -> return (fun lhs rhs -> Add (bof, lhs, rhs))) and
@@ -43,15 +52,6 @@ let mulop =
     div = char '/' >> (fun _ -> return (fun lhs rhs -> Div (bof, lhs, rhs)))
   in
     mul <|> div
-
-let integer base_loc =
-  let
-    digit = (fun c -> c - 48) <.> int_of_char <$> oneOf "0123456789" and
-    toNum x acc = x * 10 + acc
-  in
-    (fun n -> IntLiteral (base_loc, n))
-    <.> (List.fold_left toNum 0)
-    <$> Lazy.force @@ some digit
 
 let cmpop =
   (token "==" >> (fun _ -> return (fun lhs rhs -> Eq (bof, lhs, rhs))))
@@ -228,3 +228,4 @@ let program src =
       | _ -> ());
     (List.hd result).ast;
   end
+*)

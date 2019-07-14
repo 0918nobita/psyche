@@ -21,6 +21,8 @@ type expr_ast =
 
 type stmt_ast = ExportDef of location * string * expr_ast
 
+(*
 exception Syntax_error of location
 
 val program : string -> stmt_ast list
+*)
