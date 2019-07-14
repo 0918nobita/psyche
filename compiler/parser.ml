@@ -88,6 +88,8 @@ let comment =
 
 let spaces = (some @@ ((oneOf " \t\n" >> return ()) <|> comment)) >> return ()
 
+let spaces_opt = (many @@ ((oneOf " \t\n" >> return ()) <|> comment)) >> return ()
+
 (*
 let addop =
   let
@@ -114,57 +116,6 @@ let cmpop =
 let andop = token "&&" >> (fun _ -> return (fun lhs rhs -> And (bof, lhs, rhs)))
 
 let orop = token "||" >> (fun _ -> return (fun lhs rhs -> Or (bof, lhs, rhs)))
-
-exception Syntax_error of location
-
-exception Out_of_loop of int * location
-
-let comment =
-  token "(*"
-  >> (fun _ -> MParser (fun src ->
-    let line = ref 0 in
-    let chr = ref 0 in
-    let nests = ref 1 in
-    let asterisk = ref false in
-    let left_parenthesis = ref false in
-    let (idx, loc) =
-      try
-        for index = 0 to (String.length src - 1) do
-          let c = String.get src index in
-            begin match c with
-              | '(' ->
-                  begin
-                    if !asterisk then asterisk := false;
-                    if !left_parenthesis = false then left_parenthesis := true;
-                  end
-              | '*' ->
-                  begin
-                    if !asterisk = false then asterisk := true;
-                    if !left_parenthesis then (nests := !nests + 1; left_parenthesis := false)
-                  end
-              | ')' ->
-                  begin
-                    if !asterisk then (nests := !nests - 1; asterisk := false);
-                    if !left_parenthesis then left_parenthesis := false
-                  end
-              | _ ->
-                begin
-                  if c = '\n' then (line := !line + 1; chr := 0) else chr := !chr + 1;
-                  if !asterisk then asterisk := false;
-                  if !left_parenthesis then left_parenthesis := false
-                end
-            end;
-            if !nests = 0 then raise @@ Out_of_loop (index, { line = !line; chr = !chr });
-        done;
-        raise @@ Syntax_error { line = !line; chr = !chr }
-      with
-        Out_of_loop (i, location) -> (i, location)
-      in
-      [{ ast = ' '; loc; rest = String.sub src (idx + 1) (String.length src - idx - 1)}]))
-
-let spaces = Lazy.force @@ some @@ (oneOf " \t\n" <|> comment)
-
-let spaces_opt = many @@ (oneOf " \t\n" <|> comment)
 
 let chain1 base_loc p op =
   let rec rest ~loc:_ a =
