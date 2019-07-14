@@ -118,34 +118,42 @@ let code stmt_ast =
     num_functions @
     function_code
 
+let compile src =
+  let ast = program src in
+    checkDuplication ast;
+    let out = open_out "out.wasm" in
+      write out @@
+        header
+        @ type_header
+        @ type_0
+        @ function_section ast
+        @ memory
+        @ export ast
+        @ code ast;
+      close_out out
+
+let syntax_error src loc =
+  begin
+    print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
+    print_endline @@ String.make loc.chr ' ' ^ "^";
+    print_endline @@ string_of_loc loc ^ ": Syntax Error"
+  end
+
+let repl () =
+  while true do
+    let input = read_line () in
+    try
+      if input = ":quit" || input = ":exit" then exit 0;
+      compile @@ input;
+      match Sys.command "wasm-interp --run-all-exports ./out.wasm" with
+        | 0 -> ()
+        | _ -> failwith "wasm-interp との連携に失敗しました"
+    with
+      Syntax_error loc ->
+        syntax_error input loc
+  done
+
 let () =
-  let compile src =
-    let ast = program src in
-      checkDuplication ast;
-      let out = open_out "out.wasm" in
-        write out @@
-          header
-          @ type_header
-          @ type_0
-          @ function_section ast
-          @ memory
-          @ export ast
-          @ code ast;
-        close_out out
-  in
-  let repl () =
-    while true do
-      try
-        let input = read_line () in
-        if input = ":quit" || input = ":exit" then exit 0;
-        compile @@ input;
-        match Sys.command "wasm-interp --run-all-exports ./out.wasm" with
-          | 0 -> ()
-          | _ -> failwith "wasm-interp との連携に失敗しました"
-      with
-        Syntax_error loc ->
-          print_endline @@ string_of_loc loc ^ ": Syntax Error"
-    done in
   if Array.length Sys.argv = 1
     then
       print_string @@
@@ -164,12 +172,13 @@ let () =
         | "make" ->
             if Array.length Sys.argv >= 3
               then
+                let input = read @@ Sys.argv.(2) in
                 try
-                  compile @@ read @@ Sys.argv.(2)
+                  compile input
                 with
                   Syntax_error loc ->
                     begin
-                      print_endline @@ string_of_loc loc ^ ": Syntax Error"; 
+                      syntax_error input loc;
                       exit (-1)
                     end
               else
