@@ -123,6 +123,13 @@ let loc_of_expr_ast = function
   | If (loc, _, _, _) -> loc
   | Let (loc, _, _, _) -> loc
 
+let addop =
+  let
+    add = char '+' >> return (fun lhs rhs -> Add (loc_of_expr_ast lhs, lhs, rhs)) and
+    sub = char '-' >> return (fun lhs rhs -> Sub (loc_of_expr_ast lhs, lhs, rhs))
+  in
+    add <|> sub
+
 (*
 let addop =
   let
