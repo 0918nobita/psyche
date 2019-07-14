@@ -1,16 +1,19 @@
-val ( <.> ) : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
-
 type location = { line : int; chr : int }
 
 val string_of_loc : location -> string
 
+val plus_loc : location -> location -> location
+
 type 'a result = { ast : 'a; loc : location; rest : string }
 
-type 'a parser = MParser of (string -> 'a result list)
+type 'a parser = Parser of (location * string -> 'a result list)
 
-val parse : 'a parser -> string -> 'a result list
+val parse : 'a parser -> location * string -> 'a result list
 
-val token : string -> string parser
+val token : string -> (location * string) parser
+
+(*
+val ( <.> ) : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
 
 val ( <*> ) : ('a -> 'b) parser -> 'a parser -> 'b parser
 
@@ -35,3 +38,4 @@ val option : 'a -> 'a parser -> 'a parser
 val many : 'a parser -> 'a list parser
 
 val some : 'a parser -> 'a list parser lazy_t
+*)

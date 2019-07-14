@@ -1,45 +1,49 @@
-let substr str start len =
-  let str_len = String.length str in
-    if str_len >= start + len then Some (String.sub str start len) else None
-
-(* Function Composition *)
-let ( <.> ) f g x = f @@ g x
-
-let concatMap f = List.(concat <.> map f)
-
 type location = { line : int; chr : int }
 
 let string_of_loc loc = string_of_int (loc.line + 1) ^ ":" ^ string_of_int (loc.chr + 1)
 
-type 'a result = { ast : 'a; loc : location; rest : string }
-
-type 'a parser = MParser of (string -> 'a result list)
-
-let parse (MParser p) = p
-
-let rec last = function
-  | [] -> failwith "empty list"
-  | [x] -> x
-  | _ :: tail -> last tail
-
-let token tok =
-  let length = String.length tok in
-  MParser (fun src ->
-      match substr src 0 length with
-        | Some cut when cut = tok ->
-          let lines = String.split_on_char '\n' tok in
-          [{
-            ast = cut;
-            loc = { line = List.length lines - 1;
-                    chr = String.length @@ last lines };
-            rest = String.sub src length (String.length src - length)
-          }]
-        | _ -> [])
-
-let update_loc base diff = {
+let plus_loc base diff = {
   line = base.line + diff.line;
   chr = if diff.line >= 1 then diff.chr else base.chr + diff.chr
 }
+
+type 'a result = { ast : 'a; loc : location ; rest : string }
+
+type 'a parser = Parser of (location * string -> 'a result list)
+
+let parse (Parser p) = p
+
+let token tok =
+  let substr str start len =
+    let str_len = String.length str in
+      if str_len >= start + len
+        then Some (String.sub str start len)
+        else None
+  in
+  let rec last = function
+    | [] -> failwith "empty list"
+    | [x] -> x
+    | _ :: tail -> last tail
+  in
+  let length = String.length tok in
+  Parser (fun (loc, src) ->
+    match substr src 0 length with
+      | Some cut when cut = tok ->
+          let lines = String.split_on_char '\n' tok in
+          [{
+            ast = (loc, cut);
+            loc = plus_loc loc {
+              line = List.length lines - 1;
+              chr = String.length @@ last lines
+            };
+            rest = String.sub src length (String.length src - length)
+          }]
+      | _ -> [])
+
+(*
+let ( <.> ) f g x = f @@ g x
+
+let concatMap f = List.(concat <.> map f)
 
 let ( <*> ) precede succeed =
   MParser (fun src ->
@@ -108,3 +112,4 @@ let (<~>) p q = p >>= fun ~loc:_ r -> q >>= fun ~loc:_ rs -> return (r :: rs)
 let rec many p = option [] (p >>= fun ~loc:_ r -> many p >>= fun ~loc:_ rs -> return (r :: rs))
 
 let some p = lazy (p <~> many p)
+*)
