@@ -130,6 +130,29 @@ let addop =
   in
     add <|> sub
 
+let mulop =
+  let
+    mul = char '*' >> return (fun lhs rhs -> Mul (loc_of_expr_ast lhs, lhs, rhs)) and
+    div = char '/' >> return (fun lhs rhs -> Div (loc_of_expr_ast lhs, lhs, rhs))
+  in
+    mul <|> div
+
+let cmpop =
+  (token "==" >> return (fun lhs rhs -> Eq (loc_of_expr_ast lhs, lhs, rhs)))
+  <|> (token "!=" >> return (fun lhs rhs -> Ne (loc_of_expr_ast lhs, lhs, rhs)))
+  <|> (token "<=" >> return (fun lhs rhs -> LessE (loc_of_expr_ast lhs, lhs, rhs)))
+  <|> (token "<" >> return (fun lhs rhs -> Less (loc_of_expr_ast lhs, lhs, rhs)))
+  <|> (token ">=" >> return (fun lhs rhs -> GreaterE (loc_of_expr_ast lhs, lhs, rhs)))
+  <|> (token ">" >> return (fun lhs rhs -> Greater (loc_of_expr_ast lhs, lhs, rhs)))
+
+let andop =
+  token "&&"
+  >> return (fun lhs rhs -> And (loc_of_expr_ast lhs, lhs, rhs))
+
+let orop =
+  token "||"
+  >> return (fun lhs rhs -> Or (loc_of_expr_ast lhs, lhs, rhs))
+
 let chain p op =
   let rec rest ast =
     (spaces_opt >> ((fun f b -> f ast b) <$> op <*> (spaces_opt >> p) >>= rest))
@@ -139,26 +162,25 @@ let chain p op =
   >>= rest
   >>= (fun ast -> spaces_opt >> return ast)
 
+let rec factor () =
+  nat
+  <|> (identifier >>= (fun (loc, name) -> return @@ Ident (loc, name)))
+
+and term () = chain (factor ()) mulop
+
+and arithmetic_expr () =
+  unary <*> chain (term ()) addop
+
+and comparison_expr () =
+  chain (arithmetic_expr ()) cmpop
+
+and logical_expr_and () =
+  chain (comparison_expr ()) andop
+
+and logical_expr_or () =
+  chain (logical_expr_and ()) orop
+
 (*
-let mulop =
-  let
-    mul = char '*' >> (fun _ -> return (fun lhs rhs -> Mul (bof, lhs, rhs))) and
-    div = char '/' >> (fun _ -> return (fun lhs rhs -> Div (bof, lhs, rhs)))
-  in
-    mul <|> div
-
-let cmpop =
-  (token "==" >> (fun _ -> return (fun lhs rhs -> Eq (bof, lhs, rhs))))
-  <|> (token "!=" >> (fun _ -> return (fun lhs rhs -> Ne (bof, lhs, rhs))))
-  <|> (token "<=" >> (fun _ -> return (fun lhs rhs -> LessE (bof, lhs, rhs))))
-  <|> (token "<"  >> (fun _ -> return (fun lhs rhs -> Less (bof, lhs, rhs))))
-  <|> (token ">=" >> (fun _ -> return (fun lhs rhs -> GreaterE (bof, lhs, rhs))))
-  <|> (token ">"  >> (fun _ -> return (fun lhs rhs -> Greater (bof, lhs, rhs))))
-
-let andop = token "&&" >> (fun _ -> return (fun lhs rhs -> And (bof, lhs, rhs)))
-
-let orop = token "||" >> (fun _ -> return (fun lhs rhs -> Or (bof, lhs, rhs)))
-
 let rec factor base_loc =
   let if_expr = MParser (fun src ->
     parse (
@@ -203,16 +225,6 @@ let rec factor base_loc =
         <|> if_expr
         <|> let_expr
         <|> (identifier >>= (fun ~loc:_ name -> return @@ Ident (bof, name)))) src)
-
-and term base_loc = chain1 base_loc (fun loc -> factor loc) mulop
-
-and arithmetic_expr base_loc = (fun op n -> op n) <$> unary <*> chain1 base_loc term addop
-
-and comparison_expr base_loc = chain1 base_loc arithmetic_expr cmpop
-
-and logical_expr_and base_loc = chain1 base_loc comparison_expr andop
-
-and logical_expr_or base_loc = chain1 base_loc logical_expr_and orop
 
 let export_def =
   token "export"
