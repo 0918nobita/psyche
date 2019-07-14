@@ -100,3 +100,5 @@ let ( <~> ) p q = p >>= fun r -> q >>= fun rs -> return (r :: rs)
 let rec many p = option [] (p >>= fun r -> many p >>= fun rs -> return (r :: rs))
 
 let some p = p <~> many p
+
+let drop p = p >> return ()

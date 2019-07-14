@@ -83,12 +83,11 @@ let comment =
       with
         Out_of_loop (i, location) -> (i, location)
       in
-      [{ ast = (); loc; rest = String.sub src (idx + 1) (String.length src - idx - 1) }]
-    )
+      [{ ast = (); loc; rest = String.sub src (idx + 1) (String.length src - idx - 1) }])
 
-let spaces = (some @@ ((oneOf " \t\n" >> return ()) <|> comment)) >> return ()
+let spaces = drop (some @@ ((drop @@ oneOf " \t\n") <|> comment))
 
-let spaces_opt = (many @@ ((oneOf " \t\n" >> return ()) <|> comment)) >> return ()
+let spaces_opt = drop (many @@ ((drop @@ oneOf " \t\n") <|> comment))
 
 (*
 let addop =

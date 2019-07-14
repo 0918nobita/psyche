@@ -35,3 +35,5 @@ val option : 'a -> 'a parser -> 'a parser
 val many : 'a parser -> 'a list parser
 
 val some : 'a parser -> 'a list parser
+
+val drop : 'a parser -> unit parser
