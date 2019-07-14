@@ -63,15 +63,15 @@ let ( >>= ) p f =
 
 let ( >> ) m f = m >>= fun _ -> f
 
+let ( <|> ) p q =
+  Parser (fun input ->
+    let result = parse p input in
+    if List.length result = 0
+      then parse q input
+      else result)
+
 (*
 let mzero = MParser (fun _ -> [])
-
-let ( <|> ) p q =
-  MParser (fun src ->
-    let result = parse p src in
-      if List.length result = 0
-        then parse q src
-        else result)
 
 let item = MParser (function
   | "" -> []

@@ -22,12 +22,12 @@ val ( >>= ) : 'a parser -> ('a -> 'b parser) -> 'b parser
 
 val ( >> ) : 'a parser -> 'b parser -> 'b parser
 
+val ( <|> ) : 'a parser -> 'a parser -> 'a parser
+
 (*
 val satisfy : (char -> bool) -> char parser
 
 val char : char -> char parser
-
-val ( <|> ) : 'a parser -> 'a parser -> 'a parser
 
 val oneOf : string -> char parser
 
