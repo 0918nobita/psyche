@@ -18,14 +18,14 @@ val ( <*> ) : ('a -> 'b) parser -> 'a parser -> 'b parser
 
 val return : 'a -> 'a parser
 
+val ( >>= ) : 'a parser -> ('a -> 'b parser) -> 'b parser
+
+val ( >> ) : 'a parser -> 'b parser -> 'b parser
+
 (*
 val satisfy : (char -> bool) -> char parser
 
 val char : char -> char parser
-
-val ( >>= ) : 'a parser -> (loc:location -> 'a -> 'b parser) -> 'b parser
-
-val ( >> ) : 'a parser -> (location -> 'b parser) -> 'b parser
 
 val ( <|> ) : 'a parser -> 'a parser -> 'a parser
 

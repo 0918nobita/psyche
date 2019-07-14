@@ -54,27 +54,17 @@ let ( <*> ) precede succeed =
       |> List.map (function { ast; loc = _; rest = _ } as result ->
         { result with ast = f ast })))
 
-let bof = { line = 0; chr = 0 }
-
 let return ast = Parser (fun (loc, rest) -> [{ ast; loc; rest }])
 
-(*
-let return ast = MParser (fun rest -> [{ ast; rest; loc = { line = 0; chr = 0 }}])
-
-let start_from base_loc p =
-  MParser (fun src ->
-    parse p src
-    |> List.map (function { ast; loc; rest } ->
-      { ast; loc = update_loc base_loc loc; rest }))
-
 let ( >>= ) p f =
-  MParser (fun src ->
-    parse p src
-    |> concatMap (function { ast; loc = base_loc; rest } ->
-      parse (start_from base_loc (f ~loc:base_loc ast)) rest))
+  Parser (fun input ->
+    parse p input
+    |> concatMap (function { ast; loc; rest} ->
+      parse (f ast) (loc, rest)))
 
-let ( >> ) m f = m >>= fun ~loc _ -> f loc
+let ( >> ) m f = m >>= fun _ -> f
 
+(*
 let mzero = MParser (fun _ -> [])
 
 let ( <|> ) p q =
