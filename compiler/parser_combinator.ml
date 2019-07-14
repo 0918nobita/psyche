@@ -41,8 +41,8 @@ let token tok =
       | _ -> [])
 
 let ( <$> ) f p = Parser (fun input ->
-  List.map (function { ast; loc; rest } ->
-    { ast = f ast; loc; rest }) @@ (parse p) input)
+  List.map (fun result ->
+    { result with ast = f result.ast }) @@ (parse p) input)
 
 let concatMap f list = List.(concat @@ map f list)
 
@@ -51,15 +51,14 @@ let ( <*> ) precede succeed =
     parse precede input
     |> concatMap (function { ast = f; loc = precede_loc; rest } ->
       parse succeed (precede_loc, rest)
-      |> List.map (function { ast; loc = _; rest = _ } as result ->
-        { result with ast = f ast })))
+      |> List.map (fun result -> { result with ast = f result.ast })))
 
 let return ast = Parser (fun (loc, rest) -> [{ ast; loc; rest }])
 
 let ( >>= ) p f =
   Parser (fun input ->
     parse p input
-    |> concatMap (function { ast; loc; rest} ->
+    |> concatMap (function { ast; loc; rest } ->
       parse (f ast) (loc, rest)))
 
 let ( >> ) m f = m >>= fun _ -> f
