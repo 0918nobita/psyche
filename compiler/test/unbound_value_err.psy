@@ -1,0 +1,3 @@
+export main = 2;
+
+export sub = let x = 3 in y + x;
