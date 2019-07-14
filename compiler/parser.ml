@@ -199,6 +199,7 @@ let rec factor () =
             return @@ Let (loc, ident, bound_expr, expr))))))
   in
   nat
+  <|> Parser (fun input -> input |> parse (char '(' >> logical_expr_or () >>= (fun c -> char ')' >> return c)))
   <|> if_expr
   <|> let_expr
   <|> (identifier >>= (fun (loc, name) -> return @@ Ident (loc, name)))
