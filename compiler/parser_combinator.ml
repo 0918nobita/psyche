@@ -95,10 +95,8 @@ let oneOf cs = satisfy (fun (_, c') -> String.contains cs c')
 
 let option default p = p <|> return default
 
-(*
-let (<~>) p q = p >>= fun ~loc:_ r -> q >>= fun ~loc:_ rs -> return (r :: rs)
+let ( <~> ) p q = p >>= fun r -> q >>= fun rs -> return (r :: rs)
 
-let rec many p = option [] (p >>= fun ~loc:_ r -> many p >>= fun ~loc:_ rs -> return (r :: rs))
+let rec many p = option [] (p >>= fun r -> many p >>= fun rs -> return (r :: rs))
 
-let some p = lazy (p <~> many p)
-*)
+let some p = p <~> many p
