@@ -136,23 +136,23 @@ let compile src =
         @ code ast;
       close_out out
 
-let syntax_error src loc =
+let syntax_error isREPL src loc =
   begin
-    print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
+    if isREPL = false then print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
     print_endline @@ String.make loc.chr ' ' ^ "^";
     print_endline @@ string_of_loc loc ^ ": Syntax Error"
   end
 
-let duplicate_export src loc =
+let duplicate_export isREPL src loc =
   begin
-    print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
+    if isREPL = false then print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
     print_endline @@ String.make loc.chr ' ' ^ "^";
     print_endline @@ string_of_loc loc ^ ": Duplicate export"
   end
 
-let unbound_value src loc ident =
+let unbound_value isREPL src loc ident =
   begin
-    print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
+    if isREPL = false then print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
     print_endline @@ String.make loc.chr ' ' ^ "^";
     print_endline @@ string_of_loc loc ^ ": Unbound value `" ^ ident ^ "`"
   end
@@ -168,11 +168,11 @@ let repl () =
         | _ -> failwith "wasm-interp との連携に失敗しました"
     with
       | Syntax_error loc ->
-        syntax_error input loc
+        syntax_error true input loc
       | Duplicate_export loc ->
-        duplicate_export input loc
+        duplicate_export true input loc
       | Unbound_value (loc, ident) ->
-        unbound_value input loc ident
+        unbound_value true input loc ident
   done
 
 let () =
@@ -200,17 +200,17 @@ let () =
                 with
                   | Syntax_error loc ->
                       begin
-                        syntax_error input loc;
+                        syntax_error false input loc;
                         exit (-1)
                       end
                   | Duplicate_export loc ->
                       begin
-                        duplicate_export input loc;
+                        duplicate_export false input loc;
                         exit (-1)
                       end
                   | Unbound_value (loc, ident) ->
                       begin
-                        unbound_value input loc ident;
+                        unbound_value false input loc ident;
                         exit (-1)
                       end
               else
