@@ -12,13 +12,11 @@ val parse : 'a parser -> location * string -> 'a result list
 
 val token : string -> (location * string) parser
 
-(*
-val ( <.> ) : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
+val ( <$> ) : ('a -> 'b) -> 'a parser -> 'b parser
 
 val ( <*> ) : ('a -> 'b) parser -> 'a parser -> 'b parser
 
-val ( <$> ) : ('a -> 'b) -> 'a parser -> 'b parser
-
+(*
 val return : 'a -> 'a parser
 
 val satisfy : (char -> bool) -> char parser

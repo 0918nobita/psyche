@@ -13,18 +13,18 @@ type 'a parser = Parser of (location * string -> 'a result list)
 
 let parse (Parser p) = p
 
+let substr str start len =
+  let str_len = String.length str in
+    if str_len >= start + len
+      then Some (String.sub str start len)
+      else None
+
+let rec last = function
+  | [] -> failwith "empty list"
+  | [x] -> x
+  | _ :: tail -> last tail
+
 let token tok =
-  let substr str start len =
-    let str_len = String.length str in
-      if str_len >= start + len
-        then Some (String.sub str start len)
-        else None
-  in
-  let rec last = function
-    | [] -> failwith "empty list"
-    | [x] -> x
-    | _ :: tail -> last tail
-  in
   let length = String.length tok in
   Parser (fun (loc, src) ->
     match substr src 0 length with
@@ -40,27 +40,21 @@ let token tok =
           }]
       | _ -> [])
 
-(*
-let ( <.> ) f g x = f @@ g x
+let ( <$> ) f p = Parser (fun input ->
+  List.map (function { ast; loc; rest } ->
+    { ast = f ast; loc; rest }) @@ (parse p) input)
 
-let concatMap f = List.(concat <.> map f)
+let concatMap f list = List.(concat @@ map f list)
 
 let ( <*> ) precede succeed =
-  MParser (fun src ->
-    parse precede src
-    |> concatMap (function { ast = f; loc = precede_loc; rest = str } ->
-      parse succeed str
-      |> List.map (function { ast; loc = succeed_loc; rest = str'} ->
-        {
-          ast = f ast;
-          loc = update_loc precede_loc succeed_loc;
-          rest = str'
-        })))
+  Parser (fun input ->
+    parse precede input
+    |> concatMap (function { ast = f; loc = precede_loc; rest } ->
+      parse succeed (precede_loc, rest)
+      |> List.map (function { ast; loc = _; rest = _ } as result ->
+        { result with ast = f ast })))
 
-let ( <$> ) f p = MParser (fun src ->
-  List.map (function { ast; loc; rest } ->
-    { ast = f ast; loc; rest }) @@ (parse p) src)
-
+(*
 let return ast = MParser (fun rest -> [{ ast; rest; loc = { line = 0; chr = 0 }}])
 
 let start_from base_loc p =
