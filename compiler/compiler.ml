@@ -4,6 +4,8 @@ open Parser
 
 open Binary
 
+open Ir
+
 let read filename =
 	let
     f = open_in filename and
@@ -148,6 +150,13 @@ let duplicate_export src loc =
     print_endline @@ string_of_loc loc ^ ": Duplicate export"
   end
 
+let unbound_value src loc ident =
+  begin
+    print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
+    print_endline @@ String.make loc.chr ' ' ^ "^";
+    print_endline @@ string_of_loc loc ^ ": Unbound value `" ^ ident ^ "`"
+  end
+
 let repl () =
   while true do
     let input = read_line () in
@@ -162,6 +171,8 @@ let repl () =
         syntax_error input loc
       | Duplicate_export loc ->
         duplicate_export input loc
+      | Unbound_value (loc, ident) ->
+        unbound_value input loc ident
   done
 
 let () =
@@ -195,6 +206,11 @@ let () =
                   | Duplicate_export loc ->
                       begin
                         duplicate_export input loc;
+                        exit (-1)
+                      end
+                  | Unbound_value (loc, ident) ->
+                      begin
+                        unbound_value input loc ident;
                         exit (-1)
                       end
               else

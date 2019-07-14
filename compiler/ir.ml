@@ -27,6 +27,8 @@ type context = {
   allocated_addr : int
 }
 
+exception Unbound_value of location * string
+
 let insts_of_expr_ast ast =
   let rec inner (expr_ast, ctx) = match expr_ast with
     | IntLiteral (_, n) -> [I32Const n]
@@ -73,7 +75,7 @@ let insts_of_expr_ast ast =
             |> List.map snd
         in
           if List.length addrs = 0
-            then (print_endline @@ string_of_loc loc ^ ": unbound value `" ^ name ^ "`"; exit (-1))
+            then raise @@ Unbound_value (loc, name)
             else [I32Const (List.hd addrs * 4); I32Load]
   in
     inner (ast, { env = []; allocated_addr = -1 })
