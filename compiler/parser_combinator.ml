@@ -85,17 +85,17 @@ let item = Parser (fun (loc, src) ->
           rest = String.(sub s 1 (length s - 1))
         }])
 
-(*
-let mzero = MParser (fun _ -> [])
+let mzero = Parser (fun _ -> [])
 
-let satisfy f = item >>= (fun ~loc:_ ast -> if f ast then return ast else mzero)
+let satisfy f = item >>= (fun c -> if f c then return c else mzero)
 
-let char c = satisfy ((==) c)
+let char c = satisfy (fun (_, c') -> c = c')
 
-let oneOf cs = satisfy (String.contains cs)
+let oneOf cs = satisfy (fun (_, c') -> String.contains cs c')
 
 let option default p = p <|> return default
 
+(*
 let (<~>) p q = p >>= fun ~loc:_ r -> q >>= fun ~loc:_ rs -> return (r :: rs)
 
 let rec many p = option [] (p >>= fun ~loc:_ r -> many p >>= fun ~loc:_ rs -> return (r :: rs))

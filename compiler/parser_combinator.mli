@@ -24,15 +24,15 @@ val ( >> ) : 'a parser -> 'b parser -> 'b parser
 
 val ( <|> ) : 'a parser -> 'a parser -> 'a parser
 
-(*
-val satisfy : (char -> bool) -> char parser
+val satisfy : (location * char -> bool) -> (location * char) parser
 
-val char : char -> char parser
+val char : char -> (location * char) parser
 
-val oneOf : string -> char parser
+val oneOf : string -> (location * char) parser
 
 val option : 'a -> 'a parser -> 'a parser
 
+(*
 val many : 'a parser -> 'a list parser
 
 val some : 'a parser -> 'a list parser lazy_t
