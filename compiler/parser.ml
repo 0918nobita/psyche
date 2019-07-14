@@ -28,9 +28,11 @@ let unary =
   in
     plus <|> minus <|> return (fun x -> x)
 
+let digit_char = oneOf "0123456789"
+
 let nat =
   let
-    digit = (fun (_, c) -> int_of_char c - 48) <$> oneOf "0123456789" and
+    digit = (fun (_, c) -> int_of_char c - 48) <$> digit_char and
     toNum x acc = x * 10 + acc
   in
   Parser (function (loc, _) as input ->
@@ -89,6 +91,19 @@ let spaces = drop (some @@ ((drop @@ oneOf " \t\n") <|> comment))
 
 let spaces_opt = drop (many @@ ((drop @@ oneOf " \t\n") <|> comment))
 
+let letter = satisfy (fun (_, c) ->
+  let code = Char.code c in
+    (65 <= code && code <= 90) || (97 <= code && code <= 122))
+
+let rec string_of_chars = function
+  | [] -> ""
+  | c :: cs -> String.make 1 c ^ string_of_chars cs
+
+let identifier = (fun (loc, c) results ->
+  (loc, string_of_chars (c :: List.map snd results)))
+  <$> letter
+  <*> (many (letter <|> digit_char))
+
 (*
 let addop =
   let
@@ -126,18 +141,6 @@ let chain1 base_loc p op =
     p base_loc
     >>= rest
     >>= (fun ~loc:_ ast -> spaces_opt >> (fun _ -> return ast))
-
-let letter = satisfy (fun c ->
-  let code = Char.code c in
-    (65 <= code && code <= 90) || (97 <= code && code <= 122))
-
-let digit = oneOf "0123456789"
-
-let rec string_of_chars = function
-  | [] -> ""
-  | c :: cs -> String.make 1 c ^ string_of_chars cs
-
-let identifier = (fun c cs -> string_of_chars (c :: cs)) <$> letter <*> (many (letter <|> digit))
 
 let rec factor base_loc =
   let if_expr = MParser (fun src ->
