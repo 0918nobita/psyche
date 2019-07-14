@@ -130,14 +130,16 @@ let addop =
   in
     add <|> sub
 
-(*
-let addop =
-  let
-    add = char '+' >> (fun _ -> return (fun lhs rhs -> Add (bof, lhs, rhs))) and
-    sub = char '-' >> (fun _ -> return (fun lhs rhs -> Sub (bof, lhs, rhs)))
+let chain p op =
+  let rec rest ast =
+    (spaces_opt >> ((fun f b -> f ast b) <$> op <*> (spaces_opt >> p) >>= rest))
+    <|> return ast
   in
-    add <|> sub
+  p
+  >>= rest
+  >>= (fun ast -> spaces_opt >> return ast)
 
+(*
 let mulop =
   let
     mul = char '*' >> (fun _ -> return (fun lhs rhs -> Mul (bof, lhs, rhs))) and
@@ -156,17 +158,6 @@ let cmpop =
 let andop = token "&&" >> (fun _ -> return (fun lhs rhs -> And (bof, lhs, rhs)))
 
 let orop = token "||" >> (fun _ -> return (fun lhs rhs -> Or (bof, lhs, rhs)))
-
-let chain1 base_loc p op =
-  let rec rest ~loc:_ a =
-      (spaces_opt
-      >> (fun loc -> ((fun f b -> f a b) <$> op <*> (spaces_opt >> p) >>= rest)))
-    <|>
-      return a
-  in
-    p base_loc
-    >>= rest
-    >>= (fun ~loc:_ ast -> spaces_opt >> (fun _ -> return ast))
 
 let rec factor base_loc =
   let if_expr = MParser (fun src ->
