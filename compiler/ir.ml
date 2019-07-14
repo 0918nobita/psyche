@@ -58,7 +58,7 @@ let insts_of_expr_ast ast =
         inner (lhs, ctx) @ [I32Local [TeeLocal 0; I32Eqz; I32If (inner (rhs, ctx), [GetLocal 0])]]
     | If (_, cond, t, e) ->
         inner (cond, ctx) @ [I32Eqz; I32If (inner (e, ctx), inner (t, ctx))]
-    | Let (_, ident, bound_expr, expr) ->
+    | Let (_, (_, ident), bound_expr, expr) ->
         let allocated_addr = ctx.allocated_addr + 1 in
         let ctx_for_bound_expr = { ctx with allocated_addr } in
         let ctx_for_expr = { env = (ident, allocated_addr) :: ctx.env; allocated_addr } in

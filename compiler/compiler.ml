@@ -1,3 +1,9 @@
+open Parser_combinator
+
+open Parser
+
+open Binary
+
 let read filename =
 	let
     f = open_in filename and
@@ -23,19 +29,17 @@ let adjust_size size bytes =
           then bytes @ make_list lack 0
           else failwith "(adjust_arr_length) Invalid format"
 
-open Parser
-
 let checkDuplication =
   let rec inner checked = function
     | [] -> ()
-    | ExportDef (loc, name, _) :: tail ->
+    | ExportDef (loc, (_, name), _) :: tail ->
         if List.mem name checked
-          then (print_endline @@ string_of_int loc.line ^ ":" ^ string_of_int loc.chr ^ ": Duplicate export `" ^ name ^ "`"; exit (-1))
+          then (print_endline @@ string_of_loc loc ^ ": Duplicate export `" ^ name ^ "`"; exit (-1))
           else inner (name :: checked) tail
   in
     inner []
 
-let header = Binary.to_uint32 1836278016 @ Binary.to_uint32 1
+let header = to_uint32 1836278016 @ to_uint32 1
 
 let type_header =
   [ 1 (* section code *)
@@ -74,7 +78,7 @@ let export stmt_ast =
   let export_sig =
     let export_func_index = ref (-1) in
     stmt_ast
-      |> concatMap (function ExportDef (_, name, _) ->
+      |> concatMap (function ExportDef (_, (_, name), _) ->
         export_func_index := !export_func_index + 1;
         String.length name :: (* string length *)
         (List.map Base.Char.to_int @@ Base.String.to_list name) @ (* export name *)
@@ -82,7 +86,7 @@ let export stmt_ast =
         ; !export_func_index
         ])
   in
-  let num_exports = Binary.leb128_of_int @@ List.length stmt_ast in
+  let num_exports = leb128_of_int @@ List.length stmt_ast in
     7 :: (* section code *)
     List.length export_sig + List.length num_exports :: (* section size *)
     num_exports @
@@ -96,19 +100,19 @@ let function_body expr_ast =
     (if local_decl_count > 0
       then
         1 :: (* local decl count *)
-        Binary.leb128_of_int local_decl_count @ (* local type count *)
+        leb128_of_int local_decl_count @ (* local type count *)
         [127 (* i32 *)]
       else
         [0 (* local decl count *)]) @
     instructions in
-  (Binary.leb128_of_int @@ List.length decl) @ decl
+  (leb128_of_int @@ List.length decl) @ decl
 
 let code stmt_ast =
   let function_code =
     stmt_ast
       |> concatMap (function ExportDef (_, _, expr_ast) -> function_body expr_ast)
   in
-  let num_functions = Binary.leb128_of_int @@ List.length stmt_ast in
+  let num_functions = leb128_of_int @@ List.length stmt_ast in
     10 :: (* section code *)
     List.length num_functions + List.length function_code :: (* section size *)
     num_functions @
