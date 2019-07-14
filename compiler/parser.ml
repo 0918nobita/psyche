@@ -231,26 +231,28 @@ let export_def = Parser (function (loc, _) as result ->
       >>= (fun expr ->
         return @@ ExportDef (loc, ident, expr)))))
 
-(*
+let bof = { line = 0; chr = 0 }
+
 let program src =
   let parser =
     (spaces_opt
-    >> (fun _ -> export_def
-    >>= (fun ~loc:_ head ->
-      many (char ';' >> (fun _ -> spaces_opt >> (fun _ -> export_def)))
-      >>= (fun ~loc:_ tail ->
-        spaces_opt
-        >> (fun _ -> option (' ') (char ';')
-        >> (fun _ -> spaces_opt
-        >> (fun _ -> return @@ head :: tail))))))
-    <|> (spaces_opt >> (fun _ -> return [])))
+    >> export_def
+    >>= (fun head ->
+      many (
+        char ';'
+        >> spaces_opt
+        >> export_def)
+        >>= (fun tail ->
+          option () (drop @@ char ';')
+          >> spaces_opt
+          >> return @@ head :: tail)))
+    <|> (spaces_opt >> return [])
   in
   begin
-    let result = parse parser src in
+    let result = parse parser (bof, src) in
     result
     |> List.iter (function
       | { ast = _; loc; rest } when rest <> "" -> raise @@ Syntax_error loc
       | _ -> ());
-    (List.hd result).ast;
+    (List.hd result).ast
   end
-*)
