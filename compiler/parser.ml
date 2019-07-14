@@ -38,6 +38,54 @@ let nat =
     |> List.map (fun result ->
       { result with ast = IntLiteral (loc, List.fold_left toNum 0 result.ast) }))
 
+exception Syntax_error of location
+
+exception Out_of_loop of int * location
+
+let comment =
+  token "(*"
+  >> Parser (fun (_, src) ->
+    let line = ref 0 in
+    let chr = ref 0 in
+    let nests = ref 1 in
+    let asterisk = ref false in
+    let left_parenthesis = ref false in
+    let (idx, loc) =
+      try
+        for index = 0 to (String.length src - 1) do
+          let c = String.get src index in
+            begin match c with
+              | '(' ->
+                  begin
+                    if !asterisk then asterisk := false;
+                    if !left_parenthesis = false then left_parenthesis := true;
+                  end
+              | '*' ->
+                  begin
+                    if !asterisk = false then asterisk := true;
+                    if !left_parenthesis then (nests := !nests + 1; left_parenthesis := false)
+                  end
+              | ')' ->
+                  begin
+                    if !asterisk then (nests := !nests - 1; asterisk := false);
+                    if !left_parenthesis then left_parenthesis := false
+                  end
+              | _ ->
+                begin
+                  if c = '\n' then (line := !line + 1; chr := 0) else chr := !chr + 1;
+                  if !asterisk then asterisk := false;
+                  if !left_parenthesis then left_parenthesis := false
+                end
+            end;
+            if !nests = 0 then raise @@ Out_of_loop (index, { line = !line; chr = !chr });
+        done;
+        raise @@ Syntax_error { line = !line; chr = !chr }
+      with
+        Out_of_loop (i, location) -> (i, location)
+      in
+      [{ ast = (); loc; rest = String.sub src (idx + 1) (String.length src - idx - 1) }]
+    )
+
 (*
 let addop =
   let
