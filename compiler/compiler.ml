@@ -144,7 +144,7 @@ let () =
           | _ -> failwith "wasm-interp との連携に失敗しました"
       with
         Syntax_error loc ->
-          print_endline @@ string_of_int (loc.line + 1) ^ ":" ^ string_of_int (loc.chr + 1) ^ ": Syntax Error"
+          print_endline @@ string_of_loc loc ^ ": Syntax Error"
     done in
   if Array.length Sys.argv = 1
     then
@@ -169,7 +169,7 @@ let () =
                 with
                   Syntax_error loc ->
                     begin
-                      print_endline @@ string_of_int (loc.line + 1) ^ ":" ^ string_of_int (loc.chr + 1) ^ ": Syntax Error"; 
+                      print_endline @@ string_of_loc loc ^ ": Syntax Error"; 
                       exit (-1)
                     end
               else
