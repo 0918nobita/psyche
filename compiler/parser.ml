@@ -104,6 +104,25 @@ let identifier = (fun (loc, c) results ->
   <$> letter
   <*> (many (letter <|> digit_char))
 
+let loc_of_expr_ast = function
+  | IntLiteral (loc, _) -> loc
+  | Ident (loc, _) -> loc
+  | Minus (loc, _) -> loc
+  | Add (loc, _, _) -> loc
+  | Sub (loc, _, _) -> loc
+  | Mul (loc, _, _) -> loc
+  | Div (loc, _, _) -> loc
+  | Eq (loc, _, _) -> loc
+  | Ne (loc, _, _) -> loc
+  | Less (loc, _, _) -> loc
+  | LessE (loc, _, _) -> loc
+  | Greater (loc, _, _) -> loc
+  | GreaterE (loc, _, _) -> loc
+  | And (loc, _, _) -> loc
+  | Or (loc, _, _) -> loc
+  | If (loc, _, _, _) -> loc
+  | Let (loc, _, _, _) -> loc
+
 (*
 let addop =
   let
