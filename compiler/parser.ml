@@ -86,6 +86,8 @@ let comment =
       [{ ast = (); loc; rest = String.sub src (idx + 1) (String.length src - idx - 1) }]
     )
 
+let spaces = (some @@ ((oneOf " \t\n" >> return ()) <|> comment)) >> return ()
+
 (*
 let addop =
   let
