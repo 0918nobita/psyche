@@ -2,23 +2,62 @@
 
 A WASM friendly lightweight programming language implemented in OCaml
 
+## Usage
+
+```text
+psyche <command> [<args>]
+```
+
+Commands:
+
+- ``repl`` (requires [**wabt**](https://github.com/WebAssembly/wabt)) : Run as interactive shell.
+- ``make`` : Compile a source file specified by the command line argument.
+
+### ``repl`` sub command
+
+`:quit`, `:exit` : Exit the REPL
+
+```bash
+psyche repl
+export foo = 1 + 2
+foo() => i32:3
+export bar = 2 * 4 - 1
+bar() => i32:7
+export baz = 2 * if 2 > 0 then 3 else 4 + 5
+baz() => i32:6
+```
+
+### ``make`` sub command
+
+``example.psy`` :
+
+```text
+export main = 1 + 2 * if 3 < 0 then 4 else 5 + 6
+```
+
+Compile command :
+
+```bash
+psyche make example.psy  # produces out.wasm
+```
+
 ## Building
 
 In order to build the Psyche compiler, ensure that you have Git and OPAM installed.
 
-Clone a copy of the repo:
+Clone a copy of the repo :
 
 ```bash
 git clone https://github.com/0918nobita/psyche
 ```
 
-Change to the Psyche compiler directory:
+Change to the Psyche compiler directory :
 
 ```bash
 cd psyche/compiler
 ```
 
-Install dev dependencies:
+Install dev dependencies :
 
 ```bash
 opam install . --deps-only
@@ -29,23 +68,6 @@ Build the compiler :
 ```bash
 make  # produces _build/psyche (executable file)
 ```
-
-## REPL
-
-```bash
-psyche repl
-export foo = 1 + 2
-foo() => i32:3
-export bar = 2 * 4 - 1
-bar() => i32:7
-export baz = 2 * if 2 > 0 then 3 else 4 + 5
-baz() => i32:6
-...
-```
-
-### Commands
-
-`:quit`, `:exit` : Exit the REPL
 
 ## EBNF
 
@@ -67,10 +89,4 @@ if_expr = "if", logical_expr_or, "then", logical_expr_or, "else", logical_expr_o
 let_expr = "let", identifier, "=", logical_expr_or, "in", logical_expr_or
 statement = "export", identifier, "=", logical_expr_or
 program = { statement }
-```
-
-## Code Example
-
-```text
-export main = 1 + 2 * if 3 < 0 then 4 else 5 + 6
 ```
