@@ -17,9 +17,9 @@ type expr_ast =
   | And of location * expr_ast * expr_ast
   | Or of location * expr_ast * expr_ast
   | If of location * expr_ast * expr_ast * expr_ast
-  | Let of location * string * expr_ast * expr_ast
+  | Let of location * (location * string) * expr_ast * expr_ast
 
-type stmt_ast = ExportDef of location * string * expr_ast
+type stmt_ast = ExportDef of location * (location * string) * expr_ast
 
 (*
 exception Syntax_error of location

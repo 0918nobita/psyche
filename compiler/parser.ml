@@ -19,7 +19,7 @@ type expr_ast =
   | If of location * expr_ast * expr_ast * expr_ast
   | Let of location * (location * string) * expr_ast * expr_ast
 
-type stmt_ast = ExportDef of location * string * expr_ast
+type stmt_ast = ExportDef of location * (location * string) * expr_ast
 
 let unary =
   let
@@ -217,20 +217,21 @@ and logical_expr_and () =
 and logical_expr_or () =
   chain (logical_expr_and ()) orop
 
-(*
-let export_def =
-  token "export"
-  >> (fun _ -> spaces
-  >> (fun _ -> identifier
-  >>= (fun ~loc:_ ident ->
-    spaces_opt
-    >> (fun _ -> char '='
-    >> (fun _ -> spaces_opt
-    >> logical_expr_or
-    >>= (fun ~loc:_ expr ->
+let export_def = Parser (function (loc, _) as result ->
+  result
+  |> parse (
+    token "export"
+    >> spaces
+    >> identifier
+    >>= (fun ident ->
       spaces_opt
-      >> (fun _ -> return @@ ExportDef (bof, ident, expr))))))))
+      >> char '='
+      >> spaces_opt
+      >> logical_expr_or ()
+      >>= (fun expr ->
+        return @@ ExportDef (loc, ident, expr)))))
 
+(*
 let program src =
   let parser =
     (spaces_opt
