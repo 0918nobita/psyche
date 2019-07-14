@@ -17,7 +17,7 @@ type expr_ast =
   | And of location * expr_ast * expr_ast
   | Or of location * expr_ast * expr_ast
   | If of location * expr_ast * expr_ast * expr_ast
-  | Let of location * string * expr_ast * expr_ast
+  | Let of location * (location * string) * expr_ast * expr_ast
 
 type stmt_ast = ExportDef of location * string * expr_ast
 
@@ -163,7 +163,44 @@ let chain p op =
   >>= (fun ast -> spaces_opt >> return ast)
 
 let rec factor () =
+  let if_expr = Parser (function (loc, _) as result ->
+    result
+    |> parse (
+      token "if"
+      >> spaces
+      >> logical_expr_or ()
+      >>= (fun cond ->
+        token "then"
+        >> spaces
+        >> logical_expr_or ()
+        >>= (fun then_clause ->
+          token "else"
+          >> spaces
+          >> logical_expr_or ()
+          >>= (fun else_clause ->
+            return @@ If (loc, cond, then_clause, else_clause))))))
+  in
+  let let_expr = Parser (function (loc, _) as result ->
+    result
+    |> parse (
+      token "let"
+      >> spaces
+      >> identifier
+      >>= (fun ident ->
+        spaces_opt
+        >> char '='
+        >> spaces_opt
+        >> logical_expr_or ()
+        >>= (fun bound_expr ->
+          token "in"
+          >> spaces
+          >> logical_expr_or ()
+          >>= (fun expr ->
+            return @@ Let (loc, ident, bound_expr, expr))))))
+  in
   nat
+  <|> if_expr
+  <|> let_expr
   <|> (identifier >>= (fun (loc, name) -> return @@ Ident (loc, name)))
 
 and term () = chain (factor ()) mulop
@@ -181,51 +218,6 @@ and logical_expr_or () =
   chain (logical_expr_and ()) orop
 
 (*
-let rec factor base_loc =
-  let if_expr = MParser (fun src ->
-    parse (
-      token "if"
-      >> (fun _ -> spaces
-      >> logical_expr_or
-      >>= (fun ~loc ast ->
-        spaces_opt
-        >> (fun _ -> token "then"
-        >> (fun _ -> spaces
-        >> logical_expr_or
-        >>= (fun ~loc:_ then_clause ->
-          spaces_opt
-          >> (fun _ -> token "else"
-          >> (fun _ -> spaces
-          >> logical_expr_or
-          >>= (fun ~loc:_ else_clause ->
-            spaces_opt
-            >> (fun _ -> return @@ If (bof, ast, then_clause, else_clause))))))))))) src)
-  in
-  let let_expr = MParser (fun src ->
-    parse (
-      token "let"
-      >> (fun _ -> spaces
-      >> (fun _ -> identifier
-      >>= (fun ~loc:_ ident ->
-        spaces_opt
-        >> (fun _ -> char '='
-        >> (fun _ -> spaces_opt
-        >> logical_expr_or
-        >>= (fun ~loc:_ bound_expr ->
-          token "in"
-          >> (fun _ -> spaces
-          >> logical_expr_or
-          >>= (fun ~loc:_ expr ->
-            return @@ Let (bof, ident, bound_expr, expr)))))))))) src)
-  in
-    MParser (fun src ->
-      parse (
-        integer base_loc
-        <|> (char '(' >> (fun loc -> (logical_expr_or loc >>= (fun ~loc:_ c -> char ')' >> (fun _ -> return c)))))
-        <|> if_expr
-        <|> let_expr
-        <|> (identifier >>= (fun ~loc:_ name -> return @@ Ident (bof, name)))) src)
-
 let export_def =
   token "export"
   >> (fun _ -> spaces
