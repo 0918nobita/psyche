@@ -54,6 +54,10 @@ let ( <*> ) precede succeed =
       |> List.map (function { ast; loc = _; rest = _ } as result ->
         { result with ast = f ast })))
 
+let bof = { line = 0; chr = 0 }
+
+let return ast = Parser (fun (loc, rest) -> [{ ast; loc; rest }])
+
 (*
 let return ast = MParser (fun rest -> [{ ast; rest; loc = { line = 0; chr = 0 }}])
 
