@@ -70,21 +70,23 @@ let ( <|> ) p q =
       then parse q input
       else result)
 
+let item = Parser (fun (loc, src) ->
+  match src with
+    | "" -> []
+    | s ->
+        let c = String.(get (sub s 0 1) 0) in
+        [{
+          ast = (loc, c);
+          loc =
+            plus_loc loc
+            @@ if c = '\n'
+              then { line = 1; chr = 0 }
+              else { line = 0; chr = 1 };
+          rest = String.(sub s 1 (length s - 1))
+        }])
+
 (*
 let mzero = MParser (fun _ -> [])
-
-let item = MParser (function
-  | "" -> []
-  | s  ->
-    let c = String.(get (sub s 0 1) 0) in
-    [{
-      ast = c;
-      loc =
-        if c = '\n'
-          then { line = 1; chr = 0 } 
-          else { line = 0; chr = 1 };
-      rest = String.(sub s 1 (length s - 1))
-    }])
 
 let satisfy f = item >>= (fun ~loc:_ ast -> if f ast then return ast else mzero)
 
