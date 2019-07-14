@@ -29,12 +29,14 @@ let adjust_size size bytes =
           then bytes @ make_list lack 0
           else failwith "(adjust_arr_length) Invalid format"
 
+exception Duplicate_export of location
+
 let checkDuplication =
   let rec inner checked = function
     | [] -> ()
-    | ExportDef (loc, (_, name), _) :: tail ->
+    | ExportDef (_, (loc, name), _) :: tail ->
         if List.mem name checked
-          then (print_endline @@ string_of_loc loc ^ ": Duplicate export `" ^ name ^ "`"; exit (-1))
+          then raise @@ Duplicate_export loc
           else inner (name :: checked) tail
   in
     inner []
@@ -139,6 +141,13 @@ let syntax_error src loc =
     print_endline @@ string_of_loc loc ^ ": Syntax Error"
   end
 
+let duplicate_export src loc =
+  begin
+    print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
+    print_endline @@ String.make loc.chr ' ' ^ "^";
+    print_endline @@ string_of_loc loc ^ ": Duplicate export"
+  end
+
 let repl () =
   while true do
     let input = read_line () in
@@ -149,8 +158,10 @@ let repl () =
         | 0 -> ()
         | _ -> failwith "wasm-interp との連携に失敗しました"
     with
-      Syntax_error loc ->
+      | Syntax_error loc ->
         syntax_error input loc
+      | Duplicate_export loc ->
+        duplicate_export input loc
   done
 
 let () =
@@ -176,11 +187,16 @@ let () =
                 try
                   compile input
                 with
-                  Syntax_error loc ->
-                    begin
-                      syntax_error input loc;
-                      exit (-1)
-                    end
+                  | Syntax_error loc ->
+                      begin
+                        syntax_error input loc;
+                        exit (-1)
+                      end
+                  | Duplicate_export loc ->
+                      begin
+                        duplicate_export input loc;
+                        exit (-1)
+                      end
               else
                 (print_endline "Source files were not provided"; exit (-1))
         | str ->
