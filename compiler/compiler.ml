@@ -47,15 +47,35 @@ let header = to_uint32 1836278016 @ to_uint32 1
 
 let type_header =
   [ 1 (* section code *)
-  ; 5 (* section size *)
-  ; 1 (* num types *)
+  ; 10 (* section size *)
+  ; 2 (* num types *)
   ]
 
 let type_0 =
   [ 96  (* func *)
+  ; 1   (* num params *)
+  ; 127 (* i32 *)
+  ; 1   (* num params *)
+  ; 127 (* i32 *)
+  ]
+
+let type_1 =
+  [ 96  (* func *)
   ; 0   (* num params *)
   ; 1   (* num results *)
   ; 127 (* i32 *)
+  ]
+
+let import =
+  [ 2  (* section code *)
+  ; 11 (* section size *)
+  ; 1  (* num imports *)
+  ; 3  (* string length *)
+  ; 101; 110; 118 (* "env" *)
+  ; 3  (* string length *)
+  ; 108; 111; 103 (* "log" *)
+  ; 0  (* import kind *)
+  ; 0  (* import signature index *)
   ]
 
 let function_section ast =
@@ -64,7 +84,7 @@ let function_section ast =
     ; num_functions + 1 (* section size *)
     ; num_functions (* num functions *)
     ] @
-    List.init num_functions (fun _ -> 0 (* function 0 signature index *))
+    List.init num_functions (fun _ -> 1 (* function n signature index *))
 
 let memory =
   [ 5 (* section code *)
@@ -80,7 +100,7 @@ let concatMap f = List.(concat <.> map f)
 
 let export stmt_ast =
   let export_sig =
-    let export_func_index = ref (-1) in
+    let export_func_index = ref (0) in
     stmt_ast
       |> concatMap (function ExportDef (_, (_, name), _) ->
         export_func_index := !export_func_index + 1;
@@ -130,6 +150,8 @@ let compile src =
         header
         @ type_header
         @ type_0
+        @ type_1
+        @ import
         @ function_section ast
         @ memory
         @ export ast
