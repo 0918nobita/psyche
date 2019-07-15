@@ -99,10 +99,11 @@ let rec string_of_chars = function
   | [] -> ""
   | c :: cs -> String.make 1 c ^ string_of_chars cs
 
-let identifier = (fun (loc, c) results ->
-  (loc, string_of_chars (c :: List.map snd results)))
+let identifier =
+  (fun (loc, c) results -> (loc, string_of_chars (c :: List.map snd results)))
   <$> letter
   <*> (many (letter <|> digit_char))
+  >>= (fun ident -> spaces_opt >> return ident)
 
 let loc_of_expr_ast = function
   | IntLiteral (loc, _) -> loc
@@ -187,8 +188,7 @@ let rec factor () =
       >> spaces
       >> identifier
       >>= (fun ident ->
-        spaces_opt
-        >> char '='
+        char '='
         >> spaces_opt
         >> logical_expr_or ()
         >>= (fun bound_expr ->
