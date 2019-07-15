@@ -79,7 +79,8 @@ digit = zero | non_zero_digit
 integer = ["+" | "-"], (zero | (non_zero_digit, { digit }))
 letter = "a" | "b" | "c" | ... | "z" | "A" | "B" | "C" | ... | "Z"
 identifier = letter, { letter | digit }
-factor = integer | identifier | if_expr | ("(", logical_expr_or, ")") | let_expr
+funcall = identifier, "(", [ logical_expr_or, { ",", logical_expr_or } ], ")"
+factor = integer | funcall | identifier | if_expr | ("(", logical_expr_or, ")") | let_expr
 term = factor, { ("*" | "/"), factor }
 arithmetic_expr = term, { ("+" | "-"), term }
 comparison_expr = arithmetic_expr, { ("==" | "!=" | "<" | "<=" | "=>" | ">"), arithmetic_expr }
