@@ -18,6 +18,7 @@ type expr_ast =
   | Or of location * expr_ast * expr_ast
   | If of location * expr_ast * expr_ast * expr_ast
   | Let of location * (location * string) * expr_ast * expr_ast
+  | Funcall of location * string * (expr_ast list)
 
 type stmt_ast = ExportDef of location * (location * string) * expr_ast
 
