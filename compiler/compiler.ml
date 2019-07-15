@@ -190,11 +190,11 @@ let repl () =
         | _ -> failwith "wasm-interp との連携に失敗しました"
     with
       | Syntax_error loc ->
-        syntax_error true input loc
+          syntax_error true input loc
       | Duplicate_export loc ->
-        duplicate_export true input loc
+          duplicate_export true input loc
       | Unbound_value (loc, ident) ->
-        unbound_value true input loc ident
+          unbound_value true input loc ident
   done
 
 let () =
