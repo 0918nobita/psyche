@@ -18,6 +18,7 @@ type expr_ast =
   | Or of location * expr_ast * expr_ast
   | If of location * expr_ast * expr_ast * expr_ast
   | Let of location * (location * string) * expr_ast * expr_ast
+  | Funcall of location * string * (expr_ast list)
 
 type stmt_ast = ExportDef of location * (location * string) * expr_ast
 
@@ -103,7 +104,6 @@ let identifier =
   (fun (loc, c) results -> (loc, string_of_chars (c :: List.map snd results)))
   <$> letter
   <*> (many (letter <|> digit_char))
-  >>= (fun ident -> spaces_opt >> return ident)
 
 let loc_of_expr_ast = function
   | IntLiteral (loc, _) -> loc
@@ -123,6 +123,7 @@ let loc_of_expr_ast = function
   | Or (loc, _, _) -> loc
   | If (loc, _, _, _) -> loc
   | Let (loc, _, _, _) -> loc
+  | Funcall (loc, _, _) -> loc
 
 let addop =
   let
@@ -181,14 +182,15 @@ let rec factor () =
           >>= (fun else_clause ->
             return @@ If (loc, cond, then_clause, else_clause))))))
   in
-  let let_expr = Parser (function (loc, _) as result ->
-    result
+  let let_expr = Parser (function (loc, _) as input ->
+    input
     |> parse (
       token "let"
       >> spaces
       >> identifier
       >>= (fun ident ->
-        char '='
+        spaces_opt
+        >> char '='
         >> spaces_opt
         >> logical_expr_or ()
         >>= (fun bound_expr ->
@@ -198,7 +200,23 @@ let rec factor () =
           >>= (fun expr ->
             return @@ Let (loc, ident, bound_expr, expr))))))
   in
+  let funcall =
+    Parser (function (loc, _) as input ->
+      input
+      |> parse (
+        identifier
+        >>= (fun (_, ident) ->
+          char '('
+          >> (List.cons
+            <$> logical_expr_or ()
+            <*> many (char ',' >> spaces >> logical_expr_or ()))
+          >>= (fun asts ->
+            char ')'
+            >> spaces_opt
+            >> return @@ Funcall (loc, ident, asts)))))
+  in
   nat
+  <|> funcall
   <|> Parser (fun input -> input |> parse (char '(' >> logical_expr_or () >>= (fun c -> char ')' >> return c)))
   <|> if_expr
   <|> let_expr
