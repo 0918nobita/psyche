@@ -77,6 +77,7 @@ let insts_of_expr_ast ast =
           if List.length addrs = 0
             then raise @@ Unbound_value (loc, name)
             else [I32Const (List.hd addrs * 4); I32Load]
+    | Funcall _ -> failwith "Not implemented"
   in
     inner (ast, { env = []; allocated_addr = -1 })
 
