@@ -21,6 +21,7 @@ type instruction =
   | GetLocal of int
   | I32Load
   | I32Store
+  | Call of int
 
 type context = {
   env : (string * int) list ;
@@ -77,7 +78,10 @@ let insts_of_expr_ast ast =
           if List.length addrs = 0
             then raise @@ Unbound_value (loc, name)
             else [I32Const (List.hd addrs * 4); I32Load]
-    | Funcall _ -> failwith "Not implemented"
+    | Funcall (_, ident, asts) when ident = "log" ->
+        let concatMap f list = List.(concat @@ map f list) in
+        concatMap (fun ast -> inner (ast, ctx)) asts @ [Call 0]
+    | _ -> failwith ""
   in
     inner (ast, { env = []; allocated_addr = -1 })
 
@@ -141,6 +145,10 @@ let bin_of_insts irs max =
         54 :: (* opcode *)
         2 :: (* alignment *)
         0 :: (* store offset *)
+        inner (tail, current, max)
+    | Call n :: tail ->
+        16 :: (* opcode *)
+        n :: (* function index *)
         inner (tail, current, max)
   in
     inner (irs, -1, max)
