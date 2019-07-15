@@ -207,7 +207,8 @@ let rec factor () =
         identifier
         >>= (fun (_, ident) ->
           char '('
-          >> (List.cons
+          >> spaces_opt
+          >> option [] (List.cons
             <$> logical_expr_or ()
             <*> many (char ',' >> spaces >> logical_expr_or ()))
           >>= (fun asts ->
