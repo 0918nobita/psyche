@@ -1,6 +1,6 @@
 (;
   fn bar(x, y) = x * (y + 1);
-  export main() = bar(2, 3) + 3;
+  export main() = foo(2, 3) + 3;
   ↑ をコンパイルする状況を想定する (main の実行結果は 11)
 ;)
 
@@ -39,7 +39,7 @@
             (call $push (i32.const 1)) (; call main[2] ;)
             (call $push (i32.const 3)) (; y ;)
             (call $push (i32.const 2)) (; x ;)
-            (call $push (i32.const 2))) (; call bar ;)
+            (call $push (i32.const 2))) (; call foo ;)
           (else
             (if (; main[2] ;) (i32.eq (get_local $state) (i32.const 1))
               (then
@@ -48,7 +48,7 @@
                 i32.add
                 set_global $result)
               (else
-                (if (; bar ;) (i32.eq (get_local $state) (i32.const 2))
+                (if (; foo ;) (i32.eq (get_local $state) (i32.const 2))
                   (then
                     call $pop (; x ;)
                     call $pop (; y ;)
