@@ -66,7 +66,40 @@
   (func $free (param $ptr i32)
     ;; 未使用リストを線形探索して、$ptr 以上 / 以下の直近の要素を探し、
     ;; それぞれの ptr を更新することで、未使用リストに要素を追加する
-    (nop))
+    ;; 隣接する未使用ブロックが存在する場合は結合する
+    (local $target (; 1 ;) i32)
+    (local $current (; 2 ;) i32)
+    (local $previous (; 3 ;) i32)
+    (set_local $target (i32.sub (get_local $ptr) (i32.const 8)))
+    (set_local $current (i32.const 0))
+    (set_local $previous (i32.const 0))
+    (block
+      (loop $loop
+        (set_local $current (i32.load (get_local $current)))
+        (if (i32.gt_s (get_local $current) (get_local $target))
+          (then
+            ;; 隣接しているかの判定
+            (if
+              (i32.eq
+                (get_local $current)
+                (i32.add
+                  (i32.add (get_local $target) (i32.load (i32.add (get_local $target) (i32.const 4))))
+                  (i32.const 8)))
+              (then
+                (i32.store (get_local $previous) (get_local $target))
+                (i32.store (get_local $target) (i32.load (get_local $current)))
+                (i32.store
+                  (i32.add (get_local $target) (i32.const 4))
+                  (i32.add
+                    (i32.add (i32.load (i32.add (get_local $target) (i32.const 4))) (i32.const 8))
+                    (i32.load (i32.add (get_local $current) (i32.const 4))))))
+              (else
+                (i32.store (get_local $previous) (get_local $target))
+                (i32.store (get_local $target) (get_local $current))
+                (return)))))
+        (set_local $previous (get_local $current))
+        (br_if $loop (i32.ne (i32.load (get_local $current)) (i32.const 0))))
+      (i32.store (get_local $previous) (get_local $target))))
 
   (func $init
     ;; header of base
