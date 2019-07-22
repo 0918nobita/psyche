@@ -8,5 +8,5 @@
     }
   };
   const { instance } = await WebAssembly.instantiateStreaming(fetch('./malloc.wasm'), importObject);
-  console.log("result", instance.exports.main());
+  instance.exports.main();
 })();
