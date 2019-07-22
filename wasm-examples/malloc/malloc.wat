@@ -69,13 +69,15 @@
                   (i32.add (get_local $target) (i32.const 4))
                   (i32.add
                     (i32.add (i32.load (i32.add (get_local $target) (i32.const 4))) (i32.const 8))
-                    (i32.load (i32.add (get_local $current) (i32.const 4))))))
+                    (i32.load (i32.add (get_local $current) (i32.const 4)))))
+                (return))
               (else
                 (i32.store (get_local $previous) (get_local $target))
                 (i32.store (get_local $target) (get_local $current))
                 (return)))))
         (set_local $previous (get_local $current))
         (br_if $loop (i32.ne (i32.load (get_local $current)) (i32.const 0))))
+      ;; 未使用リストの末尾に追加される場合
       (i32.store (get_local $previous) (get_local $target))))
 
   (func $init
