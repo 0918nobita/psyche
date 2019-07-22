@@ -1,34 +1,11 @@
 (module
-  (import "env" "log" (func $log (param i32)))
   (import "env" "mem" (memory 1))
-
-  (global $result (mut i32) (i32.const 0))
-  (global $sp (mut i32) (i32.const 63999)) ;; stack pointer
-
-  (func $push (param i32)
-    (i32.store
-      (get_global $sp)
-      (get_local 0))
-    (set_global $sp
-      (i32.sub
-        (get_global $sp)
-        (i32.const 4))))
-
-  (func $pop (result i32)
-    (set_global $sp
-      (i32.add
-        (get_global $sp)
-        (i32.const 4)))
-    (i32.load
-      (get_global $sp)))
 
   (func $malloc (param $size i32) (result i32)
     ;; 未使用リストを線形探索して、要求されたサイズで格納できるものを探す
-    (local $elem_p i32) ;; 今注目しているブロックのポインタ
-    (local $elem_s i32) ;; 2回目の探索に用いるポインタ
-    (local $new_header i32)
-    (set_local $elem_p (; 1 ;) (i32.const 0))
-    (set_local $elem_s (; 2 ;) (i32.const 0))
+    (local $elem_p (; 1 ;) i32) ;; 今注目しているブロックのポインタ
+    (local $elem_s (; 2 ;) i32) ;; 2回目の探索に用いるポインタ
+    (local $new_header (; 3 ;) i32)
     (block
       (loop $loop
         (set_local $elem_p (i32.load (get_local $elem_p))) ;; $elem_p を次の未使用ブロックのポインタにする
@@ -71,8 +48,6 @@
     (local $current (; 2 ;) i32)
     (local $previous (; 3 ;) i32)
     (set_local $target (i32.sub (get_local $ptr) (i32.const 8)))
-    (set_local $current (i32.const 0))
-    (set_local $previous (i32.const 0))
     (block
       (loop $loop
         (set_local $current (i32.load (get_local $current)))
@@ -102,7 +77,6 @@
       (i32.store (get_local $previous) (get_local $target))))
 
   (func $init
-    ;; header of base
     (i32.store (i32.const 0) (i32.const 8)) ;; (base block) ptr
     (i32.store (i32.const 4) (i32.const 0)) ;; (base block) size
     (i32.store (i32.const 8) (i32.const 0)) ;; ptr
