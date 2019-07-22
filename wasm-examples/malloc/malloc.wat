@@ -70,8 +70,10 @@
 
   (func $init
     ;; header of base
-    (i32.store (i32.const 0) (i32.const 0)) ;; ptr
-    (i32.store (i32.const 4) (i32.const 43986))) ;; size
+    (i32.store (i32.const 0) (i32.const 8)) ;; (base block) ptr
+    (i32.store (i32.const 4) (i32.const 0)) ;; (base block) size
+    (i32.store (i32.const 8) (i32.const 0)) ;; ptr
+    (i32.store (i32.const 12) (i32.const 43978))) ;; size
 
   (func (export "main") (result i32)
     call $init
