@@ -27,8 +27,8 @@
     (local $elem_p i32) ;; 今注目しているブロックのポインタ
     (local $elem_s i32) ;; 2回目の探索に用いるポインタ
     (local $new_header i32)
-    (set_local $elem_p (i32.const 0))
-    (set_local $elem_s (i32.const 0))
+    (set_local $elem_p (; 1 ;) (i32.const 0))
+    (set_local $elem_s (; 2 ;) (i32.const 0))
     (block
       (loop $loop
         (set_local $elem_p (i32.load (get_local $elem_p))) ;; $elem_p を次の未使用ブロックのポインタにする
