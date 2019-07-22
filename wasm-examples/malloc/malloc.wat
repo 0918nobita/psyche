@@ -61,7 +61,7 @@
                 (br_if $inner_loop (i32.ne (i32.load (get_local $elem_s)) (i32.const 0))))
               (unreachable))))
         (br_if $loop (i32.ne (i32.load (get_local $elem_p)) (i32.const 0)))))
-    (i32.const 0))
+    (unreachable))
 
   (func $free (param $ptr i32)
     ;; 未使用リストを線形探索して、$ptr 以上 / 以下の直近の要素を探し、
