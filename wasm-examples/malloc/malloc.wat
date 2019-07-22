@@ -6,10 +6,12 @@
     (local $elem_p (; 1 ;) i32) ;; 今注目しているブロックのポインタ
     (local $elem_s (; 2 ;) i32) ;; 2回目の探索に用いるポインタ
     (local $new_header (; 3 ;) i32)
+    (local $diff (; 4 ;) i32) ;; 注目しているブロックのサイズ - $size
     (block
       (loop $loop
         (set_local $elem_p (i32.load (get_local $elem_p))) ;; $elem_p を次の未使用ブロックのポインタにする
-        (if (i32.gt_s (i32.load (i32.add (get_local $elem_p) (i32.const 4))) (get_local $size))
+        (set_local $diff (i32.sub (i32.load (i32.add (get_local $elem_p) (i32.const 4))) (get_local $size)))
+        (if (i32.gt_s (get_local $diff) (i32.const 0))
           (then
             ;; 必要以上の大きさの未使用ブロックを発見したので、書き込み処理を行う
             ;; 新規のヘッダの書き込み位置を決定
@@ -25,7 +27,7 @@
               (i32.sub (i32.load (i32.add (get_local $elem_p) (i32.const 4))) (i32.add (get_local $size) (i32.const 8))))
             (return
               (i32.add (get_local $new_header) (i32.const 8)))))
-        (if (i32.eq (i32.load (i32.add (get_local $elem_p) (i32.const 4))) (get_local $size))
+        (if (i32.eqz (get_local $diff))
           (then
             ;; ちょうどのサイズの未使用ブロックを発見したので、未使用リストだけを更新する
             (block
