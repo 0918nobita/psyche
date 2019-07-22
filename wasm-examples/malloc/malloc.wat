@@ -40,8 +40,6 @@
               (i32.sub
                 (i32.add (get_local $elem_p) (i32.load (i32.add (get_local $elem_p) (i32.const 4))))
                 (i32.add (get_local $size) (i32.const 8))))
-            ;; 新規ヘッダの ptr を書き込み
-            (i32.store (get_local $new_header) (i32.load (get_local $elem_p)))
             ;; 新規ヘッダの size を書き込み
             (i32.store (i32.add (i32.const 4) (get_local $new_header)) (get_local $size))
             ;; 分割されるブロックのヘッダ中の size を更新
