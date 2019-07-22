@@ -38,9 +38,9 @@
                     (i32.store (get_local $elem_s) (i32.load (get_local $elem_p)))
                     (return (get_local $elem_p))))
                 (br_if $inner_loop (i32.ne (i32.load (get_local $elem_s)) (i32.const 0))))
-              (unreachable))))
+              unreachable)))
         (br_if $loop (i32.ne (i32.load (get_local $elem_p)) (i32.const 0)))))
-    (unreachable))
+    unreachable)
 
   (func $free (param $ptr i32)
     ;; 未使用リストを線形探索して直近のブロックを探し、
@@ -55,6 +55,7 @@
         (set_local $current (i32.load (get_local $current)))
         (if (i32.gt_s (get_local $current) (get_local $target))
           (then
+            (i32.store (get_local $previous) (get_local $target))
             ;; 隣接しているかの判定
             (if
               (i32.eq
@@ -63,18 +64,15 @@
                   (i32.add (get_local $target) (i32.load (i32.add (get_local $target) (i32.const 4))))
                   (i32.const 8)))
               (then
-                (i32.store (get_local $previous) (get_local $target))
                 (i32.store (get_local $target) (i32.load (get_local $current)))
                 (i32.store
                   (i32.add (get_local $target) (i32.const 4))
                   (i32.add
                     (i32.add (i32.load (i32.add (get_local $target) (i32.const 4))) (i32.const 8))
-                    (i32.load (i32.add (get_local $current) (i32.const 4)))))
-                (return))
+                    (i32.load (i32.add (get_local $current) (i32.const 4))))))
               (else
-                (i32.store (get_local $previous) (get_local $target))
-                (i32.store (get_local $target) (get_local $current))
-                (return)))))
+                (i32.store (get_local $target) (get_local $current))))
+            return))
         (set_local $previous (get_local $current))
         (br_if $loop (i32.ne (i32.load (get_local $current)) (i32.const 0))))
       ;; 未使用リストの末尾に追加される場合
