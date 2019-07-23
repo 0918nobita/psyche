@@ -87,11 +87,23 @@ let import_section types functions memories =
   :: leb128_of_int (List.length body) (* section size *)
   @ body
 
+let function_section types functions =
+  let body =
+    leb128_of_int (List.length functions) (* num functions *)
+    @
+    (functions
+    |> List.map (fun f -> find (sig_of_func f) types)) (* function n signature index *)
+  in
+  3 (* section code *)
+  :: leb128_of_int (List.length body) (* section size *)
+  @ body
+
 let bin_of_wasm { functions; memories } =
   let types = types_of_functions functions in
   header
   @ type_section types functions
   @ import_section types functions memories
+  @ function_section types functions
 
 let func1 = ImportedFunc { module_name = ("env", "log"); signature = { params = 0; results = 1 } }
 
