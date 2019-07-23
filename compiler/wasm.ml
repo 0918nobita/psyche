@@ -83,11 +83,14 @@ let import_section types functions memories =
       :: [initial])
   in
   let entries = imported_functions @ imported_memories in
-  let num_imports = leb128_of_int @@ List.length entries in
-  let body = num_imports @ List.concat entries in
-  2 (* section code *)
-  :: leb128_of_int (List.length body) (* section size *)
-  @ body
+  if List.length entries = 0
+    then []
+    else
+      let num_imports = leb128_of_int @@ List.length entries in
+      let body = num_imports @ List.concat entries in
+      2 (* section code *)
+      :: leb128_of_int (List.length body) (* section size *)
+      @ body
 
 let function_section types functions =
   if List.length functions = 0
