@@ -63,14 +63,16 @@ let rec find elem = function
   | [] -> raise Not_found
   | h :: t -> if elem = h then 0 else 1 + find elem t
 
+let chars_of_string str = List.map Base.Char.to_int @@ Base.String.to_list str
+
 let import_section types functions memories =
   let imported_functions =
     imports_of_functions functions
     |> List.map (fun { import_name; signature } ->
       (String.length @@ fst import_name)
-      :: (List.map Base.Char.to_int @@ Base.String.to_list (fst import_name))
+      :: (chars_of_string (fst import_name))
       @ (String.length @@ snd import_name)
-      :: (List.map Base.Char.to_int @@ Base.String.to_list (snd import_name))
+      :: (chars_of_string (snd import_name))
       @ 0 (* import kind *)
       :: leb128_of_int (find signature types))
   in
@@ -78,9 +80,9 @@ let import_section types functions memories =
     memories
     |> List.map (fun { module_name; limits; initial } ->
       (String.length @@ fst module_name)
-      :: (List.map Base.Char.to_int @@ Base.String.to_list (fst module_name))
+      :: (chars_of_string (fst module_name))
       @ (String.length @@ snd module_name)
-      :: (List.map Base.Char.to_int @@ Base.String.to_list (snd module_name))
+      :: (chars_of_string (snd module_name))
       @ 2 (* import kind *)
       :: (if limits then 1 else 0)
       :: [initial])
