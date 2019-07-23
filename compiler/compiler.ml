@@ -60,7 +60,7 @@ let compile src =
   let out = open_out "out.wasm" in
   write out @@ bin_of_wasm
     { functions = functions_of_stmts ast
-    ; memories = []
+    ; memories = [ Mem { limits = false; initial = 1 } ]
     };
   close_out out
 
