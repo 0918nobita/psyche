@@ -6,6 +6,8 @@ open Binary
 
 open Ir
 
+open Wasm
+
 let read filename =
 	let
     f = open_in filename and
@@ -33,7 +35,7 @@ let adjust_size size bytes =
 
 exception Duplicate_export of location
 
-let checkDuplication =
+let check_duplication =
   let rec inner checked = function
     | [] -> ()
     | ExportDef (_, (loc, name), _) :: tail ->
@@ -43,120 +45,24 @@ let checkDuplication =
   in
     inner []
 
-let header = to_uint32 1836278016 @ to_uint32 1
+let concatMap f list = List.(concat @@ map f list)
 
-let type_header =
-  [ 1 (* section code *)
-  ; 10 (* section size *)
-  ; 2 (* num types *)
-  ]
-
-let type_0 =
-  [ 96  (* func *)
-  ; 1   (* num params *)
-  ; 127 (* i32 *)
-  ; 1   (* num params *)
-  ; 127 (* i32 *)
-  ]
-
-let type_1 =
-  [ 96  (* func *)
-  ; 0   (* num params *)
-  ; 1   (* num results *)
-  ; 127 (* i32 *)
-  ]
-
-let import =
-  [ 2  (* section code *)
-  ; 11 (* section size *)
-  ; 1  (* num imports *)
-  ; 3  (* string length *)
-  ; 101; 110; 118 (* "env" *)
-  ; 3  (* string length *)
-  ; 108; 111; 103 (* "log" *)
-  ; 0  (* import kind *)
-  ; 0  (* import signature index *)
-  ]
-
-let function_section ast =
-  let num_functions = List.length ast in
-    [ 3 (* section code *)
-    ; num_functions + 1 (* section size *)
-    ; num_functions (* num functions *)
-    ] @
-    List.init num_functions (fun _ -> 1 (* function n signature index *))
-
-let memory =
-  [ 5 (* section code *)
-  ; 3 (* section size *)
-  ; 1 (* num memories *)
-  ; 0 (* limits: flags *)
-  ; 1 (* limits: initial *)
-  ]
-
-let ( <.> ) f g x = f @@ g x
-
-let concatMap f = List.(concat <.> map f)
-
-let export stmt_ast =
-  let export_sig =
-    let export_func_index = ref (0) in
-    stmt_ast
-      |> concatMap (function ExportDef (_, (_, name), _) ->
-        export_func_index := !export_func_index + 1;
-        String.length name :: (* string length *)
-        (List.map Base.Char.to_int @@ Base.String.to_list name) @ (* export name *)
-        [ 0 (* export kind *)
-        ; !export_func_index
-        ])
-  in
-  let num_exports = leb128_of_int @@ List.length stmt_ast in
-    7 :: (* section code *)
-    List.length export_sig + List.length num_exports :: (* section size *)
-    num_exports @
-    export_sig
-
-let function_body expr_ast =
-  let max = ref (-1) in
-  let instructions = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast) max) @ [ 11 (* end *)] in
-  let local_decl_count = !max + 1 in
-  let decl =
-    (if local_decl_count > 0
-      then
-        1 :: (* local decl count *)
-        leb128_of_int local_decl_count @ (* local type count *)
-        [127 (* i32 *)]
-      else
-        [0 (* local decl count *)]) @
-    instructions in
-  (leb128_of_int @@ List.length decl) @ decl
-
-let code stmt_ast =
-  let function_code =
-    stmt_ast
-      |> concatMap (function ExportDef (_, _, expr_ast) -> function_body expr_ast)
-  in
-  let num_functions = leb128_of_int @@ List.length stmt_ast in
-    10 :: (* section code *)
-    List.length num_functions + List.length function_code :: (* section size *)
-    num_functions @
-    function_code
+let functions_of_stmts = List.map (function
+  ExportDef (_, (_, name), expr_ast) ->
+    let max = ref (-1) in
+    let code = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast) max) in
+    let locals = !max + 1 in
+    ExportedFunc { export_name = name; signature = { params = 0; results = 1 }; locals; code })
 
 let compile src =
   let ast = program src in
-    checkDuplication ast;
-    let out = open_out "out.wasm" in
-      write out @@
-        header
-        @ type_header
-        @ type_0
-        @ type_1
-        @ import
-        @ function_section ast
-        @ memory
-        @ export ast
-        @ code ast;
-      close_out out
+  check_duplication ast;
+  let out = open_out "out.wasm" in
+  write out @@ bin_of_wasm
+    { functions = functions_of_stmts ast
+    ; memories = []
+    };
+  close_out out
 
 let syntax_error isREPL src loc =
   begin
