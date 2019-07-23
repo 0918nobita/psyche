@@ -129,11 +129,14 @@ let export_section functions =
       @ 0 (* export kind *)
       :: [index (* export func index *)])
   in
-  let num_exports = leb128_of_int @@ List.length exported_functions in
-  let body = num_exports @ List.concat exported_functions in
-  7 (* section code *)
-  :: List.length body (* section size *)
-  :: body
+  if List.length exported_functions = 0
+    then []
+    else
+      let num_exports = leb128_of_int @@ List.length exported_functions in
+      let body = num_exports @ List.concat exported_functions in
+      7 (* section code *)
+      :: List.length body (* section size *)
+      :: body
 
 let code_section functions =
   let num_functions =
