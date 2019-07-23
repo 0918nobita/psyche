@@ -1,28 +1,22 @@
+MLI_FILES := binary.mli parser_combinator.mli parser.mli ir.mli wasm.mli
+
+ML_FILES := parser_combinator.ml parser.ml binary.ml ir.ml wasm.ml compiler.ml
+
 build:
 	mkdir -p _build
-	ocamlopt -c binary.mli parser_combinator.mli parser.mli ir.mli
-	ocamlfind ocamlopt \
-		-o _build/psyche \
-		-linkpkg -package base \
-		binary.ml parser_combinator.ml parser.ml ir.ml compiler.ml
+	ocamlopt -c $(MLI_FILES)
+	ocamlfind ocamlopt -o _build/psyche -linkpkg -package base $(ML_FILES)
 	rm -f *.cmx *.o
 
 for-toplevel:
 	mkdir -p _build
-	ocamlc -c binary.mli parser_combinator.mli parser.mli ir.mli
-	ocamlfind ocamlc \
-		-o _build/psyche \
-		-linkpkg -package base \
-		binary.ml parser_combinator.ml parser.ml ir.ml compiler.ml
+	ocamlc -c $(MLI_FILES)
+	ocamlfind ocamlc -o _build/psyche -linkpkg -package base $(ML_FILES)
 
 for-debugging:
 	mkdir -p _build
-	ocamlc -c binary.mli parser_combinator.mli parser.mli ir.mli
-	ocamlfind ocamlc \
-		-g \
-		-o _build/psyche \
-		-linkpkg -package base \
-		binary.ml parser_combinator.ml parser.ml ir.ml compiler.ml
+	ocamlc -c $(MLI_FILES)
+	ocamlfind ocamlc -g -o _build/psyche -linkpkg -package base $(ML_FILES)
 	rm -f *.cmo
 
 clean:
