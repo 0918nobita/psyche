@@ -137,34 +137,38 @@ let export_section functions =
 
 let code_section functions =
   let num_functions =
-    leb128_of_int @@ List.length functions - (List.length @@ imports_of_functions functions)
+    List.length functions - (List.length @@ imports_of_functions functions)
   in
-  let body =
-    num_functions @
-    (functions
-    |> concatMap (function
-      | ImportedFunc _ -> []
-      | ExportedFunc { locals; code } ->
-          if locals = 0
-            then
-              0 :: code
-            else
-              1 (* local decl count *)
-              :: locals (* local type count *)
-              :: 127 (* i32 *)
-              :: code
-      | Func { locals; code } ->
-          if locals = 0
-            then
-              0 :: code
-            else
-              1 (* local decl count *)
-              :: locals (* local type count *)
-              :: 127 (* i32 *)
-              :: code)) in
-  10 (* section code *)
-  :: leb128_of_int (List.length body) (* section size *)
-  @ body
+  if num_functions = 0
+    then []
+    else
+      let body =
+        leb128_of_int num_functions @
+        (functions
+        |> concatMap (function
+          | ImportedFunc _ -> []
+          | ExportedFunc { locals; code } ->
+              if locals = 0
+                then
+                  0 :: code
+                else
+                  1 (* local decl count *)
+                  :: locals (* local type count *)
+                  :: 127 (* i32 *)
+                  :: code
+          | Func { locals; code } ->
+              if locals = 0
+                then
+                  0 :: code
+                else
+                  1 (* local decl count *)
+                  :: locals (* local type count *)
+                  :: 127 (* i32 *)
+                  :: code))
+      in
+      10 (* section code *)
+      :: leb128_of_int (List.length body) (* section size *)
+      @ body
 
 let bin_of_wasm { functions; memories } =
   let types = types_of_functions functions in
