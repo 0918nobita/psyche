@@ -175,13 +175,3 @@ let bin_of_wasm { functions; memories } =
   @ memory_section memories
   @ export_section functions
   @ code_section functions
-
-let func1 = ImportedFunc { import_name = ("env", "log"); signature = { params = 0; results = 1 } }
-
-let func2 = Func { signature = { params = 0; results = 1 }; locals = 0; code = [] }
-
-let func3 = ExportedFunc { export_name = "main"; signature = { params = 1; results = 1 }; locals = 0; code = [] }
-
-let memory = { module_name = ("env", "mem"); limits = false; initial = 1 }
-
-let example = { functions = [func1; func2; func3]; memories = [memory] }
