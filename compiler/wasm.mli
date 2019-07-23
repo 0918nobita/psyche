@@ -9,7 +9,11 @@ type func =
   | Func of { signature: func_sig; locals: int; code: int list }
   | ExportedFunc of exported_func
 
-type mem = { module_name: string * string; limits: bool; initial: int }
+type imported_mem = { module_name: string * string; limits: bool; initial: int }
+
+type mem =
+  | Mem of { limits: bool; initial: int }
+  | ImportedMem of imported_mem
 
 type wasm = {
   functions: func list;

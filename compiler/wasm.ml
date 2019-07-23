@@ -11,7 +11,11 @@ type func =
   | Func of { signature: func_sig; locals: int; code: int list }
   | ExportedFunc of exported_func
 
-type mem = { module_name: string * string; limits: bool; initial: int }
+type imported_mem = { module_name: string * string; limits: bool; initial: int }
+
+type mem =
+  | Mem of { limits: bool; initial: int }
+  | ImportedMem of imported_mem
 
 type wasm = {
   functions: func list;
@@ -59,6 +63,10 @@ let imports_of_functions = List.fold_left (fun imports -> function
   | ImportedFunc decl -> decl :: imports
   | _ -> imports) []
 
+let imports_of_memories = List.fold_left (fun imports -> function
+  | ImportedMem decl -> decl :: imports
+  | _ -> imports) []
+
 let rec find elem = function
   | [] -> raise Not_found
   | h :: t -> if elem = h then 0 else 1 + find elem t
@@ -77,7 +85,7 @@ let import_section types functions memories =
       :: leb128_of_int (find signature types))
   in
   let imported_memories =
-    memories
+    imports_of_memories memories
     |> List.map (fun { module_name; limits; initial } ->
       (String.length @@ fst module_name)
       :: (chars_of_string (fst module_name))
@@ -119,8 +127,10 @@ let memory_section memories =
         leb128_of_int (List.length memories) (* num memories *)
         @
         (memories
-        |> concatMap (function { module_name = _; limits; initial } ->
-          [if limits then 1 else 0; initial]))
+        |> concatMap (function
+          | ImportedMem { module_name = _; limits; initial }
+          | Mem { limits; initial } ->
+              [if limits then 1 else 0; initial]))
       in
       5 (* section code *)
       :: leb128_of_int (List.length body) (* section size *)
