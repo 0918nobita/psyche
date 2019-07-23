@@ -90,15 +90,18 @@ let import_section types functions memories =
   @ body
 
 let function_section types functions =
-  let body =
-    leb128_of_int (List.length functions) (* num functions *)
-    @
-    (functions
-    |> List.map (fun f -> find (sig_of_func f) types)) (* function n signature index *)
-  in
-  3 (* section code *)
-  :: leb128_of_int (List.length body) (* section size *)
-  @ body
+  if List.length functions = 0
+    then []
+    else
+      let body =
+        leb128_of_int (List.length functions) (* num functions *)
+        @
+        (functions
+        |> List.map (fun f -> find (sig_of_func f) types)) (* function n signature index *)
+      in
+      3 (* section code *)
+      :: leb128_of_int (List.length body) (* section size *)
+      @ body
 
 let memory_section memories =
   if List.length memories = 0
