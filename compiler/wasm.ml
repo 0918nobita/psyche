@@ -101,16 +101,19 @@ let function_section types functions =
   @ body
 
 let memory_section memories =
-  let body =
-    leb128_of_int (List.length memories) (* num memories *)
-    @
-    (memories
-    |> concatMap (function { module_name = _; limits; initial } ->
-      [if limits then 1 else 0; initial]))
-  in
-  5 (* section code *)
-  :: leb128_of_int (List.length body) (* section size *)
-  @ body
+  if List.length memories = 0
+    then []
+    else
+      let body =
+        leb128_of_int (List.length memories) (* num memories *)
+        @
+        (memories
+        |> concatMap (function { module_name = _; limits; initial } ->
+          [if limits then 1 else 0; initial]))
+      in
+      5 (* section code *)
+      :: leb128_of_int (List.length body) (* section size *)
+      @ body
 
 let exports_of_functions =
   let index = ref (-1) in
