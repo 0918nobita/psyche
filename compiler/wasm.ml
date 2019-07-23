@@ -2,12 +2,14 @@ open Binary
 
 type func_sig = { params: int; results: int }
 
-type imported_func = { module_name: string * string; signature: func_sig }
+type imported_func = { import_name: string * string; signature: func_sig }
+
+type exported_func = { export_name: string; signature: func_sig; locals: int; code: int list }
 
 type func =
   | ImportedFunc of imported_func
   | Func of { signature: func_sig; locals: int; code: int list }
-  | ExportedFunc of { signature: func_sig; name: string; locals: int; code: int list }
+  | ExportedFunc of exported_func
 
 type mem = { module_name: string * string; limits: bool; initial: int }
 
@@ -61,11 +63,11 @@ let rec find elem = function
 let import_section types functions memories =
   let imported_functions =
     imports_of_functions functions
-    |> List.map (fun { module_name; signature } ->
-      (String.length @@ fst module_name)
-      :: (List.map Base.Char.to_int @@ Base.String.to_list (fst module_name))
-      @ (String.length @@ snd module_name)
-      :: (List.map Base.Char.to_int @@ Base.String.to_list (snd module_name))
+    |> List.map (fun { import_name; signature } ->
+      (String.length @@ fst import_name)
+      :: (List.map Base.Char.to_int @@ Base.String.to_list (fst import_name))
+      @ (String.length @@ snd import_name)
+      :: (List.map Base.Char.to_int @@ Base.String.to_list (snd import_name))
       @ 0 (* import kind *)
       :: leb128_of_int (find signature types))
   in
@@ -110,6 +112,29 @@ let memory_section memories =
   :: leb128_of_int (List.length body) (* section size *)
   @ body
 
+let exports_of_functions =
+  let index = ref (-1) in
+  List.fold_left (fun exports ->
+    index := !index + 1;
+    function
+      | ExportedFunc decl -> (!index, decl) :: exports
+      | _ -> exports) []
+
+let export_section functions =
+  let exported_functions =
+    exports_of_functions functions
+    |> List.map (fun (index, { export_name }) ->
+      String.length export_name (* string length *)
+      :: (List.map Base.Char.to_int @@ Base.String.to_list export_name)
+      @ 0 (* export kind *)
+      :: [index (* export func index *)])
+  in
+  let num_exports = leb128_of_int @@ List.length exported_functions in
+  let body = num_exports @ List.concat exported_functions in
+  7 (* section code *)
+  :: List.length body (* section size *)
+  :: body
+
 let bin_of_wasm { functions; memories } =
   let types = types_of_functions functions in
   header
@@ -117,11 +142,14 @@ let bin_of_wasm { functions; memories } =
   @ import_section types functions memories
   @ function_section types functions
   @ memory_section memories
+  @ export_section functions
 
-let func1 = ImportedFunc { module_name = ("env", "log"); signature = { params = 0; results = 1 } }
+let func1 = ImportedFunc { import_name = ("env", "log"); signature = { params = 0; results = 1 } }
 
 let func2 = Func { signature = { params = 0; results = 1 }; locals = 0; code = [] }
 
+let func3 = ExportedFunc { export_name = "main"; signature = { params = 1; results = 1 }; locals = 0; code = [] }
+
 let memory = { module_name = ("env", "mem"); limits = false; initial = 1 }
 
-let example = { functions = [func1; func2]; memories = [memory] }
+let example = { functions = [func1; func2; func3]; memories = [memory] }
