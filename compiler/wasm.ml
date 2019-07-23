@@ -98,12 +98,25 @@ let function_section types functions =
   :: leb128_of_int (List.length body) (* section size *)
   @ body
 
+let memory_section memories =
+  let body =
+    leb128_of_int (List.length memories) (* num memories *)
+    @
+    (memories
+    |> concatMap (function { module_name = _; limits; initial } ->
+      [if limits then 1 else 0; initial]))
+  in
+  5 (* section code *)
+  :: leb128_of_int (List.length body) (* section size *)
+  @ body
+
 let bin_of_wasm { functions; memories } =
   let types = types_of_functions functions in
   header
   @ type_section types functions
   @ import_section types functions memories
   @ function_section types functions
+  @ memory_section memories
 
 let func1 = ImportedFunc { module_name = ("env", "log"); signature = { params = 0; results = 1 } }
 
