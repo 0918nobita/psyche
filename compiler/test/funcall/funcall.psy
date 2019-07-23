@@ -1,1 +1,0 @@
-export main = let a = log(2 * 3) in log(a + 7);
