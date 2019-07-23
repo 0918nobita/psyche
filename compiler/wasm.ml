@@ -37,20 +37,23 @@ let concatMap f list = List.(concat @@ map f list)
 let make_list len elem = Array.to_list @@ Array.make len elem
 
 let type_section types functions =
-  let num_types = leb128_of_int @@ List.length types in
-  let type_decls =
-    types
-    |> concatMap (fun { params; results } ->
-      96 (* func *)
-      :: params (* num params *)
-      :: make_list params 127 (* i32 *)
-      @ results (* num results *)
-      :: make_list results 127 (* i32 *))
-  in
-  1 (* section code *)
-  :: leb128_of_int (List.length num_types + List.length type_decls) (* section size *)
-  @ num_types
-  @ type_decls
+  if List.length types = 0
+    then []
+    else
+      let num_types = leb128_of_int @@ List.length types in
+      let type_decls =
+        types
+        |> concatMap (fun { params; results } ->
+          96 (* func *)
+          :: params (* num params *)
+          :: make_list params 127 (* i32 *)
+          @ results (* num results *)
+          :: make_list results 127 (* i32 *))
+      in
+      1 (* section code *)
+      :: leb128_of_int (List.length num_types + List.length type_decls) (* section size *)
+      @ num_types
+      @ type_decls
 
 let imports_of_functions = List.fold_left (fun imports -> function
   | ImportedFunc decl -> decl :: imports
