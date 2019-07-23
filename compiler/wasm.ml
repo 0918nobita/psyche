@@ -164,24 +164,20 @@ let code_section functions =
         (functions
         |> concatMap (function
           | ImportedFunc _ -> []
-          | ExportedFunc { locals; code } ->
+          | ExportedFunc { locals; code } | Func { locals; code } ->
               if locals = 0
                 then
-                  0 :: code
+                  (leb128_of_int @@ List.length code + 2) (* func body size *)
+                  @ 0 (* local decl count *)
+                  :: code
+                  @ [11 (* end *)]
                 else
-                  1 (* local decl count *)
+                  (leb128_of_int @@ List.length code + 4) (* func body size *)
+                  @ 1 (* local decl count *)
                   :: locals (* local type count *)
                   :: 127 (* i32 *)
                   :: code
-          | Func { locals; code } ->
-              if locals = 0
-                then
-                  0 :: code
-                else
-                  1 (* local decl count *)
-                  :: locals (* local type count *)
-                  :: 127 (* i32 *)
-                  :: code))
+                  @ [11 (* end *)]))
       in
       10 (* section code *)
       :: leb128_of_int (List.length body) (* section size *)
