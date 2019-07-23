@@ -135,6 +135,37 @@ let export_section functions =
   :: List.length body (* section size *)
   :: body
 
+let code_section functions =
+  let num_functions =
+    leb128_of_int @@ List.length functions - (List.length @@ imports_of_functions functions)
+  in
+  let body =
+    num_functions @
+    (functions
+    |> concatMap (function
+      | ImportedFunc _ -> []
+      | ExportedFunc { locals; code } ->
+          if locals = 0
+            then
+              0 :: code
+            else
+              1 (* local decl count *)
+              :: locals (* local type count *)
+              :: 127 (* i32 *)
+              :: code
+      | Func { locals; code } ->
+          if locals = 0
+            then
+              0 :: code
+            else
+              1 (* local decl count *)
+              :: locals (* local type count *)
+              :: 127 (* i32 *)
+              :: code)) in
+  10 (* section code *)
+  :: leb128_of_int (List.length body) (* section size *)
+  @ body
+
 let bin_of_wasm { functions; memories } =
   let types = types_of_functions functions in
   header
@@ -143,6 +174,7 @@ let bin_of_wasm { functions; memories } =
   @ function_section types functions
   @ memory_section memories
   @ export_section functions
+  @ code_section functions
 
 let func1 = ImportedFunc { import_name = ("env", "log"); signature = { params = 0; results = 1 } }
 
