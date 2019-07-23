@@ -1,3 +1,5 @@
+open List_utils
+
 type location = { line : int; chr : int }
 
 let string_of_loc loc = string_of_int (loc.line + 1) ^ ":" ^ string_of_int (loc.chr + 1)
@@ -43,8 +45,6 @@ let token tok =
 let ( <$> ) f p = Parser (fun input ->
   List.map (fun result ->
     { result with ast = f result.ast }) @@ (parse p) input)
-
-let concatMap f list = List.(concat @@ map f list)
 
 let ( <*> ) precede succeed =
   Parser (fun input ->

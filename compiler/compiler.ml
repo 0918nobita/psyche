@@ -1,11 +1,8 @@
+open List_utils
 open Parser_combinator
-
 open Parser
-
 open Binary
-
 open Ir
-
 open Wasm
 
 let read filename =
@@ -19,8 +16,6 @@ let read filename =
       _ -> ());
     close_in f;
     !str
-
-let make_list len elem = Array.to_list @@ Array.make len elem
 
 let write f bytes = List.iter (output_byte f) bytes
 
@@ -44,8 +39,6 @@ let check_duplication =
           else inner (name :: checked) tail
   in
     inner []
-
-let concatMap f list = List.(concat @@ map f list)
 
 let functions_of_stmts = List.map (function
   ExportDef (_, (_, name), expr_ast) ->

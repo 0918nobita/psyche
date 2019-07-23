@@ -1,6 +1,6 @@
-open Parser
-
+open List_utils
 open Parser_combinator
+open Parser
 
 type instruction =
   | I32Const of int
@@ -79,7 +79,6 @@ let insts_of_expr_ast ast =
             then raise @@ Unbound_value (loc, name)
             else [I32Const (List.hd addrs * 4); I32Load]
     | Funcall (_, ident, asts) when ident = "log" ->
-        let concatMap f list = List.(concat @@ map f list) in
         concatMap (fun ast -> inner (ast, ctx)) asts @ [Call 0]
     | _ -> failwith ""
   in

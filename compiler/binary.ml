@@ -1,7 +1,7 @@
+open List_utils
+
 type bit = Zero | One
 type bin = bit list
-
-let make_list len elem = Array.to_list @@ Array.make len elem
 
 let plus x y =
   let rec plus_inner = function

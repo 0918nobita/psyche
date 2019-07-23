@@ -1,3 +1,4 @@
+open List_utils
 open Binary
 
 type func_sig = { params: int; results: int }
@@ -35,10 +36,6 @@ let types_of_functions =
   List.fold_left collect []
 
 let header = to_uint32 1836278016 @ to_uint32 1
-
-let concatMap f list = List.(concat @@ map f list)
-
-let make_list len elem = Array.to_list @@ Array.make len elem
 
 let type_section types functions =
   if List.length types = 0
