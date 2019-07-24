@@ -1,5 +1,7 @@
 # Psyche
 
+[![CircleCI](https://circleci.com/gh/0918nobita/psyche.svg?style=svg)](https://circleci.com/gh/0918nobita/psyche)
+
 A WASM friendly lightweight programming language implemented in OCaml
 
 ## Usage
