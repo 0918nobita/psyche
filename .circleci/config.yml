@@ -15,7 +15,6 @@ jobs:
       - *cmd_attach_workspace
       - cmd_pwd
       - cmd_ls
-      - run: opam install -y base
       - run:
           name: Build the Psyche compiler
           command: eval $(opam config env) && make
