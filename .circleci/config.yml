@@ -1,0 +1,43 @@
+version: 2.1
+
+workspace_root: &workspace_root
+  /tmp/workspace
+
+cmd_attach_workspace: &cmd_attach_workspace
+  attach_workspace:
+    at: *workspace_root
+
+jobs:
+  unit_test:
+    executor: build_executor
+    steps:
+      - checkout
+      - *cmd_attach_workspace
+      - cmd_pwd
+      - cmd_ls
+      - run: opam install -y base
+      - run:
+          name: Build the Psyche compiler
+          command: eval $(opam config env) && make
+          working_directory: compiler
+
+commands:
+  cmd_pwd:
+    description: Display `pwd` to increase an observability & debugging
+    steps:
+      - run: pwd
+  cmd_ls:
+    description: Display `ls -al` to increase an observability & debugging
+    steps:
+      - run: ls -la
+
+executors:
+  build_executor:
+    docker:
+      - image: 0918nobita/psyche-docker:latest
+    working_directory: *workspace_root
+
+workflows:
+  main:
+    jobs:
+      - unit_test
