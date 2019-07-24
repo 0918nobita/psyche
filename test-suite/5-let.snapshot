@@ -1,4 +1,4 @@
 Compilation: Success
 Output:
 sub() => i32:12
-main() => i32:6
+main() => i32:7
