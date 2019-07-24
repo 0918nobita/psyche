@@ -1,4 +1,2 @@
 _build
-*.cmi
-*.cmx
 *.cmo
