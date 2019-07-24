@@ -56,6 +56,20 @@ Build the compiler :
 make  # produces _build/psyche (executable file)
 ```
 
+## Testing
+
+Change to ``test-suite`` directory :
+
+```bash
+cd psyche/test-suite
+```
+
+Run tests :
+
+```bash
+make test
+```
+
 ## EBNF
 
 ```
