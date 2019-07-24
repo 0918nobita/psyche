@@ -1,0 +1,5 @@
+Compilation: Failed
+Output:
+export foo = 42;
+       ^
+3:8: Duplicate export

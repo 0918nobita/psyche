@@ -1,0 +1,5 @@
+Compilation: Failed
+Output:
+export sub = let x = 3 in y + x;
+                          ^
+3:27: Unbound value `y`

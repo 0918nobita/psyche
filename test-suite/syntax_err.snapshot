@@ -1,0 +1,5 @@
+Compilation: Failed
+Output:
+  main = 3 + #;
+           ^
+6:12: Syntax Error
