@@ -12,22 +12,7 @@ psyche <command> [<args>]
 
 Commands:
 
-- ``repl`` (requires [**wabt**](https://github.com/WebAssembly/wabt)) : Run as interactive shell.
 - ``make`` : Compile a source file specified by the command line argument.
-
-### ``repl`` sub command
-
-`:quit`, `:exit` : Exit the REPL
-
-```bash
-psyche repl
-export foo = 1 + 2
-foo() => i32:3
-export bar = 2 * 4 - 1
-bar() => i32:7
-export baz = 2 * if 2 > 0 then 3 else 4 + 5
-baz() => i32:6
-```
 
 ### ``make`` sub command
 

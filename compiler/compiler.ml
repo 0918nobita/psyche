@@ -78,24 +78,6 @@ let unbound_value isREPL src loc ident =
     print_endline @@ string_of_loc loc ^ ": Unbound value `" ^ ident ^ "`"
   end
 
-let repl () =
-  while true do
-    let input = read_line () in
-    try
-      if input = ":quit" || input = ":exit" then exit 0;
-      compile @@ input;
-      match Sys.command "wasm-interp --run-all-exports ./out.wasm" with
-        | 0 -> ()
-        | _ -> failwith "wasm-interp との連携に失敗しました"
-    with
-      | Syntax_error loc ->
-          syntax_error true input loc
-      | Duplicate_export loc ->
-          duplicate_export true input loc
-      | Unbound_value (loc, ident) ->
-          unbound_value true input loc ident
-  done
-
 let () =
   if Array.length Sys.argv = 1
     then
@@ -110,8 +92,6 @@ let () =
         "Version 0.0.1\n"
     else
       match Sys.argv.(1) with
-        | "repl" ->
-            repl ()
         | "make" ->
             if Array.length Sys.argv >= 3
               then
