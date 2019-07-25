@@ -33,7 +33,7 @@ exception Duplicate_export of location
 let check_duplication =
   let rec inner checked = function
     | [] -> ()
-    | ExportDef (_, (loc, name), _) :: tail ->
+    | FuncDef (_, _, (loc, name), _, _) :: tail ->
         if List.mem name checked
           then raise @@ Duplicate_export loc
           else inner (name :: checked) tail
