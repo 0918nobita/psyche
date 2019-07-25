@@ -2,5 +2,4 @@
   コメント
 *)
 
-export
-  main = 3 + #;
+pub fn main() { 3 } + #;

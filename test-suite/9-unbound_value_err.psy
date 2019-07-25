@@ -1,3 +1,7 @@
-export main = 2;
+pub fn main() {
+  2
+};
 
-export sub = let x = 3 in y + x;
+pub fn sub() {
+  let x = 3 in y + x
+};
