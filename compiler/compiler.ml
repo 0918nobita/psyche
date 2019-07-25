@@ -28,14 +28,14 @@ let adjust_size size bytes =
           then bytes @ make_list lack 0
           else failwith "(adjust_arr_length) Invalid format"
 
-exception Duplicate_export of location
+exception Duplicate_func of location
 
 let check_duplication =
   let rec inner checked = function
     | [] -> ()
     | FuncDef (_, _, (loc, name), _, _) :: tail ->
         if List.mem name checked
-          then raise @@ Duplicate_export loc
+          then raise @@ Duplicate_func loc
           else inner (name :: checked) tail
   in
     inner []
@@ -82,7 +82,7 @@ let duplicate_export isREPL src loc =
   begin
     if isREPL = false then print_endline @@ List.nth (String.split_on_char '\n' src) loc.line;
     print_endline @@ String.make loc.chr ' ' ^ "^";
-    print_endline @@ string_of_loc loc ^ ": Duplicate export"
+    print_endline @@ string_of_loc loc ^ ": Duplicate function"
   end
 
 let unbound_value isREPL src loc ident =
@@ -118,7 +118,7 @@ let () =
                         syntax_error false input loc;
                         exit (-1)
                       end
-                  | Duplicate_export loc ->
+                  | Duplicate_func loc ->
                       begin
                         duplicate_export false input loc;
                         exit (-1)
