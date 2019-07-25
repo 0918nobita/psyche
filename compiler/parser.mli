@@ -1,8 +1,10 @@
 open Parser_combinator
 
+type ident = location * string
+
 type expr_ast =
   | IntLiteral of location * int
-  | Ident of location * string
+  | Ident of ident
   | Minus of location * expr_ast
   | Add of location * expr_ast * expr_ast
   | Sub of location * expr_ast * expr_ast
@@ -17,10 +19,10 @@ type expr_ast =
   | And of location * expr_ast * expr_ast
   | Or of location * expr_ast * expr_ast
   | If of location * expr_ast * expr_ast * expr_ast
-  | Let of location * (location * string) * expr_ast * expr_ast
+  | Let of location * ident * expr_ast * expr_ast
   | Funcall of location * string * (expr_ast list)
 
-type stmt_ast = ExportDef of location * (location * string) * expr_ast
+type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
 exception Syntax_error of location
 

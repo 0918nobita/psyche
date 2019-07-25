@@ -1,8 +1,10 @@
 open Parser_combinator
 
+type ident = location * string
+
 type expr_ast =
   | IntLiteral of location * int
-  | Ident of location * string
+  | Ident of ident
   | Minus of location * expr_ast
   | Add of location * expr_ast * expr_ast
   | Sub of location * expr_ast * expr_ast
@@ -17,10 +19,10 @@ type expr_ast =
   | And of location * expr_ast * expr_ast
   | Or of location * expr_ast * expr_ast
   | If of location * expr_ast * expr_ast * expr_ast
-  | Let of location * (location * string) * expr_ast * expr_ast
+  | Let of location * ident * expr_ast * expr_ast
   | Funcall of location * string * (expr_ast list)
 
-type stmt_ast = ExportDef of location * (location * string) * expr_ast
+type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
 let unary =
   let
@@ -210,7 +212,7 @@ let rec factor () =
           >> spaces_opt
           >> option [] (List.cons
             <$> logical_expr_or ()
-            <*> many (char ',' >> spaces >> logical_expr_or ()))
+            <*> many (char ',' >> spaces_opt >> logical_expr_or ()))
           >>= (fun asts ->
             char ')'
             >> spaces_opt
@@ -237,31 +239,47 @@ and logical_expr_and () =
 and logical_expr_or () =
   chain (logical_expr_and ()) orop
 
-let export_def = Parser (function (loc, _) as result ->
-  result
+let func_def = Parser (function (loc, _) as input ->
+  input
   |> parse (
-    token "export"
-    >> spaces
-    >> identifier
-    >>= (fun ident ->
-      spaces_opt
-      >> char '='
-      >> spaces_opt
-      >> logical_expr_or ()
-      >>= (fun expr ->
-        return @@ ExportDef (loc, ident, expr)))))
+    option false (token "pub" >> spaces >> return true)
+    >>= (fun pub ->
+      token "fn"
+      >> spaces
+      >> identifier
+      >>= (fun name ->
+        spaces_opt
+        >> char '('
+        >> spaces_opt
+        >> option [] (List.cons
+          <$> identifier
+          <*> many (
+            char ','
+            >> spaces_opt
+            >> identifier
+            >>= (fun ident ->  spaces_opt >> return ident)))
+        >>= (fun args ->
+          char ')'
+          >> spaces_opt
+          >> char '{'
+          >> spaces_opt
+          >> logical_expr_or ()
+          >>= (fun body ->
+            char '}'
+            >> spaces_opt
+            >> return @@ FuncDef (loc, pub, name, args, body)))))))
 
 let bof = { line = 0; chr = 0 }
 
 let program src =
   let parser =
     (spaces_opt
-    >> export_def
+    >> func_def
     >>= (fun head ->
       many (
         char ';'
         >> spaces_opt
-        >> export_def)
+        >> func_def)
         >>= (fun tail ->
           option () (drop @@ char ';')
           >> spaces_opt
