@@ -40,12 +40,26 @@ let check_duplication =
   in
     inner []
 
-let functions_of_stmts = List.map (function
-  ExportDef (_, (_, name), expr_ast) ->
-    let max = ref (-1) in
-    let code = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast) max) in
-    let locals = !max + 1 in
-    ExportedFunc { export_name = name; signature = { params = 0; results = 1 }; locals; code })
+let functions_of_stmts stmts =
+  stmts
+  |> List.map (function
+    FuncDef (_, pub, (_, name), _, expr_ast) ->
+      let max = ref (-1) in
+      let code = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast) max) in
+      if pub
+        then
+          ExportedFunc
+            { export_name = name
+            ; signature = { params = 0; results = 1 }
+            ; locals = !max + 1
+            ; code
+            }
+        else
+          Func
+            { signature = { params = 0; results = 1 }
+            ; locals = !max + 1
+            ; code
+            })
 
 let compile src =
   let ast = program src in
