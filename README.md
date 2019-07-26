@@ -111,3 +111,8 @@ func_def = ["pub"], "fn", identifier, "(", [ identifier, { ",", identifier } ], 
 
 program = { func_def }
 ```
+
+## Reference
+
+- [WebAssembly Specification](https://webassembly.github.io/spec/core/index.html)
+- [WebAssembly Reference Manual](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md)
