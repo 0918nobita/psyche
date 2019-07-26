@@ -19,6 +19,7 @@ type mem =
   | ImportedMem of imported_mem
 
 type wasm = {
+  global_vars: int list list;
   functions: func list;
   memories: mem list
 }
@@ -129,6 +130,15 @@ let memory_section memories =
       :: leb128_of_int (List.length body) (* section size *)
       @ body
 
+let global_section global_vars =
+  if List.length global_vars > 0
+    then
+      let body =
+        leb128_of_int (List.length global_vars) @ List.concat (List.map (fun code -> [127; 1] @ code @ [11]) global_vars)
+      in
+      6 :: leb128_of_int (List.length body) @ body
+    else []
+
 let exports_of_functions =
   let index = ref (-1) in
   List.fold_left (fun exports ->
@@ -186,12 +196,13 @@ let code_section functions =
       :: leb128_of_int (List.length body) (* section size *)
       @ body
 
-let bin_of_wasm { functions; memories } =
+let bin_of_wasm { functions; memories; global_vars } =
   let types = types_of_functions functions in
   header
   @ type_section types functions
   @ import_section types functions memories
   @ function_section types functions
   @ memory_section memories
+  @ global_section global_vars
   @ export_section functions
   @ code_section functions

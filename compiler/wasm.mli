@@ -16,6 +16,7 @@ type mem =
   | ImportedMem of imported_mem
 
 type wasm = {
+  global_vars: int list list;
   functions: func list;
   memories: mem list
 }
