@@ -120,6 +120,10 @@ let insts_of_expr_ast ast names params =
             @ inner (expr, ctx)
             @ [I32Store]))
         @ [Call 4]
+    | ListGet (loc, list_expr, index_expr) ->
+        inner (list_expr, ctx)
+        @ inner (index_expr, ctx)
+        @ [I32Const 4; I32Mul; I32Add; I32Load]
   in
   let max_depth = ref (-1) in
   let body = inner (ast, { env = []; depth = -1; max_depth; params }) in

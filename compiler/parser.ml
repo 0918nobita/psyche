@@ -22,6 +22,7 @@ type expr_ast =
   | Let of location * ident * expr_ast * expr_ast
   | Funcall of location * string * (expr_ast list)
   | ListLiteral of location * (expr_ast list)
+  | ListGet of location * expr_ast * expr_ast
 
 type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
@@ -128,6 +129,7 @@ let loc_of_expr_ast = function
   | Let (loc, _, _, _) -> loc
   | Funcall (loc, _, _) -> loc
   | ListLiteral (loc, _) -> loc
+  | ListGet (loc, _, _) -> loc
 
 let addop =
   let
@@ -168,7 +170,7 @@ let chain p op =
   >>= rest
   >>= (fun ast -> spaces_opt >> return ast)
 
-let rec factor () =
+let rec factor1 () =
   let if_expr = Parser (function (loc, _) as result ->
     result
     |> parse (
@@ -239,7 +241,24 @@ let rec factor () =
   <|> let_expr
   <|> (identifier >>= (fun (loc, name) -> return @@ Ident (loc, name)))
 
-and term () = chain (factor ()) mulop
+and factor2 () = Parser (function (loc, _) as input ->
+  input
+  |> parse (
+    factor1 ()
+    >>= (fun factor ->
+      option factor (
+        spaces_opt
+        >> char '.'
+        >> spaces_opt
+        >> char '('
+        >> spaces_opt
+        >> logical_expr_or ()
+        >>= (fun index_expr ->
+          char ')'
+          >> spaces_opt
+          >> return @@ ListGet (loc, factor, index_expr))))))
+
+and term () = chain (factor2 ()) mulop
 
 and arithmetic_expr () =
   unary <*> chain (term ()) addop
