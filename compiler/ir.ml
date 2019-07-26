@@ -18,19 +18,22 @@ type instruction =
   | I32If of instruction list * instruction list
   | I32Local of instruction list
   | TeeLocal of int
-  | GetLocal of int
+  | GetLocalVar of int
   | I32Load
   | I32Store
   | Call of int
+  | GetLocal of int
 
-type context = {
-  env : (string * int) list ;
-  allocated_addr : int
-}
+type context =
+  { params : ident list
+  ; env : (string * int) list
+  ; depth : int
+  ; max_depth : int ref
+  }
 
 exception Unbound_value of location * string
 
-let insts_of_expr_ast ast =
+let insts_of_expr_ast ast names params =
   let rec inner (expr_ast, ctx) = match expr_ast with
     | IntLiteral (_, n) -> [I32Const n]
     | Minus (_, expr) ->
@@ -58,31 +61,50 @@ let insts_of_expr_ast ast =
     | And (_, lhs, rhs) ->
         inner (lhs, ctx) @ [I32Eqz; I32If ([I32Const 0], inner (rhs, ctx))]
     | Or (_, lhs, rhs) ->
-        inner (lhs, ctx) @ [I32Local [TeeLocal 0; I32Eqz; I32If (inner (rhs, ctx), [GetLocal 0])]]
+        inner (lhs, ctx) @ [I32Local [TeeLocal 0; I32Eqz; I32If (inner (rhs, ctx), [GetLocalVar 0])]]
     | If (_, cond, t, e) ->
         inner (cond, ctx) @ [I32Eqz; I32If (inner (e, ctx), inner (t, ctx))]
     | Let (_, (_, ident), bound_expr, expr) ->
-        let allocated_addr = ctx.allocated_addr + 1 in
-        let ctx_for_bound_expr = { ctx with allocated_addr } in
-        let ctx_for_expr = { env = (ident, allocated_addr) :: ctx.env; allocated_addr } in
-          I32Const (allocated_addr * 4) ::
-          inner (bound_expr, ctx_for_bound_expr) @
-          [I32Store] @
-          inner (expr, ctx_for_expr)
+        let depth = ctx.depth + 1 in
+        let () = if depth > !(ctx.max_depth) then ctx.max_depth := depth in
+        let ctx_for_bound_expr = { ctx with depth } in
+        let ctx_for_expr = { ctx with env = (ident, depth) :: ctx.env; depth } in
+        Call 5
+        :: I32Const (4 * depth)
+        :: I32Add
+        :: inner (bound_expr, ctx_for_bound_expr)
+        @ [I32Store]
+        @ inner (expr, ctx_for_expr)
     | Ident (loc, name) ->
         let addrs =
           ctx.env
-            |> List.filter (fun elem -> fst elem = name)
-            |> List.map snd
+          |> List.filter (fun elem -> fst elem = name)
+          |> List.map snd
         in
-          if List.length addrs = 0
-            then raise @@ Unbound_value (loc, name)
-            else [I32Const (List.hd addrs * 4); I32Load]
-    | Funcall (_, ident, asts) when ident = "log" ->
-        concatMap (fun ast -> inner (ast, ctx)) asts @ [Call 0]
-    | _ -> failwith ""
+          if List.length addrs = 0  (* let 束縛されていない場合、引数に含まれていないか確認する *)
+            then (
+              let index = find name (params |> List.map snd)
+              in
+              if index != (-1)
+                then
+                  [GetLocal index]
+                else
+                  raise @@ Unbound_value (loc, name))
+            else
+              [Call 5; I32Const (List.hd addrs * 4);  I32Add; I32Load]
+    | Funcall (loc, ident, asts) ->
+        let index = find ident names in
+        if index != (-1)
+          then
+            concatMap (fun ast -> inner (ast, ctx)) asts @ [Call (index + 6)]
+          else
+            raise @@ Unbound_value (loc, ident)
   in
-    inner (ast, { env = []; allocated_addr = -1 })
+  let max_depth = ref (-1) in
+  let body = inner (ast, { env = []; depth = -1; max_depth; params }) in
+  if !max_depth > (-1)
+    then [I32Const (4 * (!max_depth + 1)); Call 1; Call 3] @ body @ [Call 4; Call 2]
+    else body
 
 let bin_of_insts irs max =
   let rec inner (irs, current, max) = match irs with
@@ -132,7 +154,7 @@ let bin_of_insts irs max =
     | TeeLocal n :: tail ->
         34 :: Binary.leb128_of_int (n + current) @
         inner (tail, current, max)
-    | GetLocal n :: tail ->
+    | GetLocalVar n :: tail ->
         32 :: Binary.leb128_of_int (n + current) @
         inner (tail, current, max)
     | I32Load :: tail ->
@@ -148,6 +170,9 @@ let bin_of_insts irs max =
     | Call n :: tail ->
         16 :: (* opcode *)
         n :: (* function index *)
+        inner (tail, current, max)
+    | GetLocal n :: tail ->
+        32 :: Binary.leb128_of_int n @
         inner (tail, current, max)
   in
     inner (irs, -1, max)

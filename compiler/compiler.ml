@@ -40,23 +40,61 @@ let check_duplication =
   in
     inner []
 
+let hidden_functions =
+  [ Func (* init *)
+    { signature = { params = 0; results = 0}
+    ; locals = 0
+    ; code = [65; 0; 65; 8; 54; 2; 0; 65; 4; 65; 0; 54; 2; 0; 65; 8; 65; 0; 54; 2; 0; 65; 12; 65; 202; 215; 2; 54; 2; 0]
+    }
+  ; Func (* malloc *)
+    { signature = { params = 1; results = 1}
+    ; locals = 4
+    ; code = [2; 64; 3; 64; 32; 1; 40; 2; 0; 33; 1; 32; 1; 65; 4; 106; 40; 2; 0; 32; 0; 107; 33; 4; 32; 4; 65; 0; 74; 4; 64; 32; 1; 32; 1; 65; 4; 106; 40; 2; 0; 106; 32; 0; 65; 8; 106; 107; 33; 3; 65; 4; 32; 3; 106; 32; 0; 54; 2; 0; 32; 1; 65; 4; 106; 32; 1; 65; 4; 106; 40; 2; 0; 32; 0; 65; 8; 106; 107; 54; 2; 0; 32; 3; 65; 8; 106; 15; 11; 32; 4; 69; 4; 64; 2; 64; 3; 64; 32; 2; 40; 2; 0; 33; 2; 32; 2; 40; 2; 0; 32; 1; 70; 4; 64; 32; 2; 32; 1; 40; 2; 0; 54; 2; 0; 32; 1; 15; 11; 32; 2; 40; 2; 0; 65; 0; 71; 13; 0; 11; 0; 11; 11; 32; 1; 40; 2; 0; 65; 0; 71; 13; 0; 11; 11; 0]
+    }
+  ; Func (* free *)
+    { signature = { params = 1; results = 0}
+    ; locals = 3
+    ; code = [32; 0; 65; 8; 107; 33; 1; 2; 64; 3; 64; 32; 2; 40; 2; 0; 33; 2; 32; 2; 32; 1; 74; 4; 64; 32; 3; 32; 1; 54; 2; 0; 32; 2; 32; 1; 32; 1; 65; 4; 106; 40; 2; 0; 106; 65; 8; 106; 70; 4; 64; 32; 1; 32; 2; 40; 2; 0; 54; 2; 0; 32; 1; 65; 4; 106; 32; 1; 65; 4; 106; 40; 2; 0; 65; 8; 106; 32; 2; 65; 4; 106; 40; 2; 0; 106; 54; 2; 0; 5; 32; 1; 32; 2; 54; 2; 0; 11; 15; 11; 32; 2; 33; 3; 32; 2; 40; 2; 0; 65; 0; 71; 13; 0; 11; 32; 3; 32; 1; 54; 2; 0; 11]
+    }
+  ; Func (* push *)
+    { signature = { params = 1; results = 0}
+    ; locals = 0
+    ; code =
+      [35; 0; 32; 0; 54; 2; 0; 35; 0; 65; 4; 107; 36; 0]
+    }
+  ; Func (* pop *)
+    { signature = { params = 0; results = 1}
+    ; locals = 0
+    ; code = [35; 0; 65; 4; 106; 36; 0; 35; 0; 40; 2; 0]
+    }
+  ; Func (* top *)
+    { signature = { params = 0; results = 1}
+    ; locals = 0
+    ; code = [35; 0; 65; 4; 106; 40; 2; 0]
+    }
+  ]
+
+let names_of_stmts =
+  List.map (function FuncDef (_, _, (_, name), _, _) -> name)
+
 let functions_of_stmts stmts =
+  let names = names_of_stmts stmts in
   stmts
   |> List.map (function
-    FuncDef (_, pub, (_, name), _, expr_ast) ->
+    FuncDef (_, pub, ident, args, expr_ast) ->
       let max = ref (-1) in
-      let code = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast) max) in
+      let code = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast names args) max) in
       if pub
         then
           ExportedFunc
-            { export_name = name
-            ; signature = { params = 0; results = 1 }
+            { export_name = snd ident
+            ; signature = { params = List.length args; results = 1 }
             ; locals = !max + 1
             ; code
             }
         else
           Func
-            { signature = { params = 0; results = 1 }
+            { signature = { params = List.length args; results = 1 }
             ; locals = !max + 1
             ; code
             })
@@ -66,7 +104,8 @@ let compile src =
   check_duplication ast;
   let out = open_out "out.wasm" in
   write out @@ bin_of_wasm
-    { functions = functions_of_stmts ast
+    { global_vars = [[65; 255; 243; 3] (* i32.const 63999 *) ]
+    ; functions = hidden_functions @ functions_of_stmts ast
     ; memories = [ Mem { limits = false; initial = 1 } ]
     };
   close_out out
