@@ -69,12 +69,19 @@ let insts_of_expr_ast ast names params =
         let () = if depth > !(ctx.max_depth) then ctx.max_depth := depth in
         let ctx_for_bound_expr = { ctx with depth } in
         let ctx_for_expr = { ctx with env = (ident, depth) :: ctx.env; depth } in
-        Call 5
-        :: I32Const (4 * depth)
-        :: I32Add
-        :: inner (bound_expr, ctx_for_bound_expr)
-        @ [I32Store]
-        @ inner (expr, ctx_for_expr)
+        if depth = 0
+          then
+            Call 5
+            :: inner (bound_expr, ctx_for_bound_expr)
+            @ I32Store
+            :: inner (expr, ctx_for_expr)
+          else
+            Call 5
+            :: I32Const (4 * depth)
+            :: I32Add
+            :: inner (bound_expr, ctx_for_bound_expr)
+            @ I32Store
+            :: inner (expr, ctx_for_expr)
     | Ident (loc, name) ->
         let addrs =
           ctx.env
@@ -91,7 +98,11 @@ let insts_of_expr_ast ast names params =
                 else
                   raise @@ Unbound_value (loc, name))
             else
-              [Call 5; I32Const (List.hd addrs * 4);  I32Add; I32Load]
+              if List.hd addrs = 0
+                then
+                  [Call 5; I32Load]
+                else
+                  [Call 5; I32Const (List.hd addrs * 4);  I32Add; I32Load]
     | Funcall (loc, ident, asts) ->
         let index = find ident names in
         if index != (-1)
