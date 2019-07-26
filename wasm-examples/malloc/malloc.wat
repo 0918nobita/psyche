@@ -85,8 +85,9 @@
     (i32.store (i32.const 12) (i32.const 43978))) ;; size
 
   (func (export "main")
-    call $init
     (call $malloc (i32.const 10))
     call $free
     (call $malloc (i32.const 15))
-    call $free))
+    call $free)
+
+  (start $init))

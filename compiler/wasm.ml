@@ -205,4 +205,5 @@ let bin_of_wasm { functions; memories; global_vars } =
   @ memory_section memories
   @ global_section global_vars
   @ export_section functions
+  @ [8; 1; 0] (* start section (function index: 0) *)
   @ code_section functions
