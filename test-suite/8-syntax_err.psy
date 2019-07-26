@@ -2,4 +2,4 @@
   コメント
 *)
 
-pub fn main() { 3 } + #;
+pub fn main() { 3 } + #
