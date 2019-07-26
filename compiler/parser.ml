@@ -276,14 +276,9 @@ let program src =
     (spaces_opt
     >> func_def
     >>= (fun head ->
-      many (
-        char ';'
-        >> spaces_opt
-        >> func_def)
+      many func_def
         >>= (fun tail ->
-          option () (drop @@ char ';')
-          >> spaces_opt
-          >> return @@ head :: tail)))
+          return @@ head :: tail)))
     <|> (spaces_opt >> return [])
   in
   begin
