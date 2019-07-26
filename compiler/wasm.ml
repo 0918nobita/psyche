@@ -64,10 +64,6 @@ let imports_of_memories = List.fold_left (fun imports -> function
   | ImportedMem decl -> decl :: imports
   | _ -> imports) []
 
-let rec find elem = function
-  | [] -> raise Not_found
-  | h :: t -> if elem = h then 0 else 1 + find elem t
-
 let chars_of_string str = List.map Base.Char.to_int @@ Base.String.to_list str
 
 let import_section types functions memories =
