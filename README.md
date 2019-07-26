@@ -58,6 +58,8 @@ make  # produces _build/psyche (executable file)
 
 ## Testing
 
+In order to run tests, ensure that you have [WABT](https://github.com/WebAssembly/wabt) installed.
+
 Change to ``test-suite`` directory :
 
 ```bash
