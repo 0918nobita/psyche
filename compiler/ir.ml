@@ -110,6 +110,7 @@ let insts_of_expr_ast ast names params =
             concatMap (fun ast -> inner (ast, ctx)) asts @ [Call (index + 6)]
           else
             raise @@ Unbound_value (loc, ident)
+    | ListLiteral _ -> failwith "Not implemented" 
   in
   let max_depth = ref (-1) in
   let body = inner (ast, { env = []; depth = -1; max_depth; params }) in

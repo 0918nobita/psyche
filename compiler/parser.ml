@@ -21,6 +21,7 @@ type expr_ast =
   | If of location * expr_ast * expr_ast * expr_ast
   | Let of location * ident * expr_ast * expr_ast
   | Funcall of location * string * (expr_ast list)
+  | ListLiteral of location * (expr_ast list)
 
 type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
@@ -126,6 +127,7 @@ let loc_of_expr_ast = function
   | If (loc, _, _, _) -> loc
   | Let (loc, _, _, _) -> loc
   | Funcall (loc, _, _) -> loc
+  | ListLiteral (loc, _) -> loc
 
 let addop =
   let
@@ -218,8 +220,20 @@ let rec factor () =
             >> spaces_opt
             >> return @@ Funcall (loc, ident, asts)))))
   in
+  let list_literal = Parser (function (loc, _) as input ->
+    input
+    |> parse (
+      char '['
+      >> spaces_opt
+      >> option [] (List.cons <$> logical_expr_or () <*> many (char ';' >> spaces_opt >> logical_expr_or ()))
+      >>= (fun ast_list ->
+        char ']'
+        >> spaces_opt
+        >> return @@ ListLiteral (loc, ast_list))))
+  in
   nat
   <|> funcall
+  <|> list_literal
   <|> Parser (fun input -> input |> parse (char '(' >> logical_expr_or () >>= (fun c -> char ')' >> return c)))
   <|> if_expr
   <|> let_expr

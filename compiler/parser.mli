@@ -21,6 +21,7 @@ type expr_ast =
   | If of location * expr_ast * expr_ast * expr_ast
   | Let of location * ident * expr_ast * expr_ast
   | Funcall of location * string * (expr_ast list)
+  | ListLiteral of location * (expr_ast list)
 
 type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
