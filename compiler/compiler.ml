@@ -83,19 +83,19 @@ let functions_of_stmts stmts =
   |> List.map (function
     FuncDef (_, pub, ident, args, expr_ast) ->
       let max = ref (-1) in
-      let code = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast names args) max) in
+      let code = (Ir.bin_of_insts (Ir.insts_of_expr_ast expr_ast names args) max (List.length args)) in
       if pub
         then
           ExportedFunc
             { export_name = snd ident
             ; signature = { params = List.length args; results = 1 }
-            ; locals = !max + 1
+            ; locals = !max + 1 + List.length args
             ; code
             }
         else
           Func
             { signature = { params = List.length args; results = 1 }
-            ; locals = !max + 1
+            ; locals = !max + 1 + List.length args
             ; code
             })
 

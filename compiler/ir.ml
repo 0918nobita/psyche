@@ -117,7 +117,7 @@ let insts_of_expr_ast ast names params =
     then [I32Const (4 * (!max_depth + 1)); Call 1; Call 3] @ body @ [Call 4; Call 2]
     else body
 
-let bin_of_insts irs max =
+let bin_of_insts irs max num_params =
   let rec inner (irs, current, max) = match irs with
     | [] -> []
     | I32Const n :: tail ->
@@ -186,4 +186,4 @@ let bin_of_insts irs max =
         32 :: Binary.leb128_of_int n @
         inner (tail, current, max)
   in
-    inner (irs, -1, max)
+    inner (irs, (-1) + num_params, max)
