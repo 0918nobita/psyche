@@ -89,9 +89,13 @@ let_expr = "let", identifier, "=", logical_expr_or, "in", logical_expr_or
 
 funcall = identifier, "(", [ logical_expr_or, { ",", logical_expr_or } ], ")"
 
-factor = integer | funcall | identifier | if_expr | ("(", logical_expr_or, ")") | let_expr
+list_literal = "[", [ logical_expr_or, { ";", logical_expr_or } ], "]"
 
-term = factor, { ("*" | "/"), factor }
+factor1 = integer | funcall | list_literal | ("(", logical_expr_or, ")") | if_expr | let_expr | identifier
+
+factor2 = factor1, [ ".", "(", logical_expr_or, ")" ]
+
+term = factor2, { ("*" | "/"), factor2 }
 
 arithmetic_expr = term, { ("+" | "-"), term }
 
