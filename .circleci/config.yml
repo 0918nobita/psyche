@@ -8,15 +8,15 @@ cmd_attach_workspace: &cmd_attach_workspace
     at: *workspace_root
 
 jobs:
-  compiler_4_04_0:
+  for_4_04_0:
     executor: for_4_04_0
     steps:
       - test
-  compiler_4_05_0:
+  for_4_05_0:
     executor: for_4_05_0
     steps:
       - test
-  compiler_4_06_0:
+  for_4_06_0:
     executor: for_4_06_0
     steps:
       - test
@@ -64,6 +64,6 @@ executors:
 workflows:
   main:
     jobs:
-      - compiler_4_04_0
-      - compiler_4_05_0
-      - compiler_4_06_0
+      - for_4_04_0
+      - for_4_05_0
+      - for_4_06_0
