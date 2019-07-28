@@ -38,12 +38,6 @@ Clone a copy of the repo :
 git clone https://github.com/0918nobita/psyche
 ```
 
-Change to the Psyche compiler directory :
-
-```bash
-cd psyche/compiler
-```
-
 Install dev dependencies :
 
 ```bash
@@ -53,20 +47,12 @@ opam install . --deps-only
 Build the compiler :
 
 ```bash
-make  # produces _build/psyche (executable file)
+make  # produces compiler/_build/psyche (executable file)
 ```
 
 ## Testing
 
 In order to run tests, ensure that you have [WABT](https://github.com/WebAssembly/wabt) installed.
-
-Change to ``test-suite`` directory :
-
-```bash
-cd psyche/test-suite
-```
-
-Run tests :
 
 ```bash
 make test
