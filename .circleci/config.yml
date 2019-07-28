@@ -65,9 +65,5 @@ workflows:
   main:
     jobs:
       - compiler_4_04_0
-      - compiler_4_05_0:
-          requires:
-            - compiler_4_04_0
-      - compiler_4_06_0:
-          requires:
-            - compiler_4_05_0
+      - compiler_4_05_0
+      - compiler_4_06_0
