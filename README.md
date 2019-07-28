@@ -36,9 +36,15 @@ Compile command :
 psyche make example.psy  # produces out.wasm
 ```
 
-## Building
+In order to install or to build the Psyche compiler, ensure that you have Git and OPAM installed.
 
-In order to build the Psyche compiler, ensure that you have Git and OPAM installed.
+## Installing
+
+```
+opam install psyche
+```
+
+## Building
 
 Clone a copy of the repo :
 
