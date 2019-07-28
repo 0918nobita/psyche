@@ -8,19 +8,18 @@ cmd_attach_workspace: &cmd_attach_workspace
     at: *workspace_root
 
 jobs:
-  unit_test:
-    executor: build_executor
+  compiler_4_04_0:
+    executor: for_4_04_0
     steps:
-      - checkout
-      - *cmd_attach_workspace
-      - cmd_pwd
-      - cmd_ls
-      - run:
-          name: Build the Psyche compiler
-          command: eval $(opam config env) && opam install -y .
-      - run:
-          name: Run tests
-          command: eval $(opam config env) && make test
+      - test
+  compiler_4_05_0:
+    executor: for_4_05_0
+    steps:
+      - test
+  compiler_4_06_0:
+    executor: for_4_06_0
+    steps:
+      - test
 
 commands:
   cmd_pwd:
@@ -31,14 +30,44 @@ commands:
     description: Display `ls -al` to increase an observability & debugging
     steps:
       - run: ls -la
+  install:
+    description: Install the Psyche compiler
+    steps:
+      - run: eval $(opam config env) && opam install -y .
+  unit_test:
+    description: Run tests
+    steps:
+      - run: eval $(opam config env) && make test
+  test:
+    steps:
+      - checkout
+      - *cmd_attach_workspace
+      - cmd_pwd
+      - cmd_ls
+      - install
+      - unit_test
 
 executors:
-  build_executor:
+  for_4_04_0:
     docker:
-      - image: 0918nobita/psyche-docker:latest
+      - image: 0918nobita/psyche-docker:for-ocaml-4.04.0
+    working_directory: *workspace_root
+  for_4_05_0:
+    docker:
+      - image: 0918nobita/psyche-docker:for-ocaml-4.05.0
+    working_directory: *workspace_root
+  for_4_06_0:
+    docker:
+      - image: 0918nobita/psyche-docker:for-ocaml-4.06.0
     working_directory: *workspace_root
 
 workflows:
   main:
     jobs:
-      - unit_test
+      - compiler_4_04_0
+      - compiler_4_05_0:
+          requires:
+            - compiler_4_04_0
+      - compiler_4_06_0:
+          requires:
+            - compiler_4_05_0
