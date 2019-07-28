@@ -17,13 +17,10 @@ jobs:
       - cmd_ls
       - run:
           name: Build the Psyche compiler
-          command: eval $(opam config env) && make
-      - run:
-          command: sudo mv psyche /usr/bin/psyche
-          working_directory: compiler/_build
+          command: eval $(opam config env) && opam install -y .
       - run:
           name: Run tests
-          command: make test
+          command: eval $(opam config env) && make test
 
 commands:
   cmd_pwd:
