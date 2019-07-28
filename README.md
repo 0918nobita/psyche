@@ -1,6 +1,6 @@
 # Psyche
 
-[![CircleCI](https://circleci.com/gh/0918nobita/psyche.svg?style=svg)](https://circleci.com/gh/0918nobita/psyche)
+[![CircleCI](https://circleci.com/gh/0918nobita/psyche.svg?style=svg)](https://circleci.com/gh/0918nobita/psyche)  [![OPAM](https://img.shields.io/badge/OPAM-v0.0.1-orange)](https://opam.ocaml.org/packages/psyche/)
 
 A WASM friendly lightweight programming language implemented in OCaml
 
@@ -36,7 +36,7 @@ Compile command :
 psyche make example.psy  # produces out.wasm
 ```
 
-In order to install or to build the Psyche compiler, ensure that you have Git and OPAM installed.
+In order to install or to build the Psyche compiler, ensure that you have OPAM installed.
 
 ## Installing
 
