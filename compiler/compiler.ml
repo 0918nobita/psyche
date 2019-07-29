@@ -25,7 +25,7 @@ let adjust_size size bytes =
       then bytes
       else
         if lack > 0
-          then bytes @ make_list lack 0
+          then bytes @ Base.List.init lack (fun _ -> 0)
           else failwith "(adjust_arr_length) Invalid format"
 
 exception Duplicate_func of location

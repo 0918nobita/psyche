@@ -47,9 +47,9 @@ let type_section types functions =
         Base.List.concat_map types (fun { params; results } ->
           96 (* func *)
           :: params (* num params *)
-          :: make_list params 127 (* i32 *)
+          :: Base.List.init params (fun _ -> 127) (* i32 *)
           @ results (* num results *)
-          :: make_list results 127 (* i32 *))
+          :: Base.List.init results (fun _ -> 127) (* i32 *))
       in
       1 (* section code *)
       :: leb128_of_int (List.length num_types + List.length type_decls) (* section size *)
