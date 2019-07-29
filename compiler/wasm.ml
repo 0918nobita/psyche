@@ -66,6 +66,10 @@ let imports_of_memories = List.fold_left (fun imports -> function
 
 let chars_of_string str = List.map Base.Char.to_int @@ Base.String.to_list str
 
+let unwrap = function
+  | Some v -> v
+  | None -> raise @@ Invalid_argument "Unwrap failure"
+
 let import_section types functions memories =
   let imported_functions =
     imports_of_functions functions
@@ -75,7 +79,7 @@ let import_section types functions memories =
       @ (String.length @@ snd import_name)
       :: (chars_of_string (snd import_name))
       @ 0 (* import kind *)
-      :: leb128_of_int (find signature types))
+      :: leb128_of_int (fst @@ unwrap @@ Base.List.findi types (fun _ -> (=) signature)))
   in
   let imported_memories =
     imports_of_memories memories
@@ -106,7 +110,7 @@ let function_section types functions =
         leb128_of_int (List.length functions) (* num functions *)
         @
         (functions
-        |> List.map (fun f -> find (sig_of_func f) types)) (* function n signature index *)
+        |> List.map (fun f -> fst @@ unwrap @@ Base.List.findi types (fun _ -> (=) (sig_of_func f)))) (* function n signature index *)
       in
       3 (* section code *)
       :: leb128_of_int (List.length body) (* section size *)
