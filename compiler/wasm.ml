@@ -44,8 +44,7 @@ let type_section types functions =
     else
       let num_types = leb128_of_int @@ List.length types in
       let type_decls =
-        types
-        |> concatMap (fun { params; results } ->
+        Base.List.concat_map types (fun { params; results } ->
           96 (* func *)
           :: params (* num params *)
           :: make_list params 127 (* i32 *)
@@ -120,8 +119,7 @@ let memory_section memories =
       let body =
         leb128_of_int (List.length memories) (* num memories *)
         @
-        (memories
-        |> concatMap (function
+        (Base.List.concat_map memories (function
           | ImportedMem { module_name = _; limits; initial }
           | Mem { limits; initial } ->
               [if limits then 1 else 0; initial]))
@@ -174,8 +172,7 @@ let code_section functions =
     else
       let body =
         leb128_of_int num_functions @
-        (functions
-        |> concatMap (function
+        (Base.List.concat_map functions (function
           | ImportedFunc _ -> []
           | ExportedFunc { locals; code } | Func { locals; code } ->
               if locals = 0

@@ -6,5 +6,3 @@ let rec find elem = function
   | h :: t ->
       let tail = find elem t in
       if tail != (-1) then 1 + tail else (-1)
-
-let concatMap f list = List.(concat @@ map f list)

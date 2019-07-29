@@ -107,7 +107,7 @@ let insts_of_expr_ast ast names params =
         let index = find ident names in
         if index != (-1)
           then
-            concatMap (fun ast -> inner (ast, ctx)) asts @ [Call (index + 6)]
+            Base.List.concat_map asts (fun ast -> inner (ast, ctx)) @ [Call (index + 6)]
           else
             raise @@ Unbound_value (loc, ident)
     | ListLiteral (loc, exprs) ->
