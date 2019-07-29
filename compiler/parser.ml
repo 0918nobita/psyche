@@ -100,12 +100,8 @@ let letter = satisfy (fun (_, c) ->
   let code = Char.code c in
     (65 <= code && code <= 90) || (97 <= code && code <= 122))
 
-let rec string_of_chars = function
-  | [] -> ""
-  | c :: cs -> String.make 1 c ^ string_of_chars cs
-
 let identifier =
-  (fun (loc, c) results -> (loc, string_of_chars (c :: List.map snd results)))
+  (fun (loc, c) results -> (loc, Base.String.of_char_list (c :: List.map snd results)))
   <$> letter
   <*> (many (letter <|> digit_char))
 
