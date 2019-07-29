@@ -1,5 +1,3 @@
-open List_utils
-
 type location = { line : int; chr : int }
 
 let string_of_loc loc = string_of_int (loc.line + 1) ^ ":" ^ string_of_int (loc.chr + 1)

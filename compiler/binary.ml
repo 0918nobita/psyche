@@ -1,5 +1,3 @@
-open List_utils
-
 type bit = Zero | One
 type bin = bit list
 

@@ -1,4 +1,3 @@
-open List_utils
 open Binary
 
 type func_sig = { params: int; results: int }

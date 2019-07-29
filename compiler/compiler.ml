@@ -1,4 +1,3 @@
-open List_utils
 open Parser_combinator
 open Parser
 open Binary
