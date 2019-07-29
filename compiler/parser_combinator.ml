@@ -21,11 +21,6 @@ let substr str start len =
       then Some (String.sub str start len)
       else None
 
-let rec last = function
-  | [] -> failwith "empty list"
-  | [x] -> x
-  | _ :: tail -> last tail
-
 let token tok =
   let length = String.length tok in
   Parser (fun (loc, src) ->
@@ -36,7 +31,7 @@ let token tok =
             ast = (loc, cut);
             loc = plus_loc loc {
               line = List.length lines - 1;
-              chr = String.length @@ last lines
+              chr = String.length @@ Base.List.last_exn lines
             };
             rest = String.sub src length (String.length src - length)
           }]
