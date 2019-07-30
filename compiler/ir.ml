@@ -107,10 +107,24 @@ let insts_of_expr_ast ast names params =
           | None ->
               raise @@ Unbound_value (loc, ident)
         end
-    | Cons (loc, car, cdr) ->
-        begin
-          failwith "Not implemented"
-        end
+    | Nil _ -> [I32Const 0]
+    | Cons (_, car, cdr) ->
+        inner (cdr, ctx) @
+        [ I32Const 8
+        ; Call 1  (* malloc *)
+        ; Call 3  (* push *)
+        ; Call 5  (* top *)
+        ] @
+        inner (car, ctx) @
+        [ I32Store
+        ; Call 5  (* top *)
+        ; I32Const 4
+        ; I32Add
+        ; I32Store
+        ; Call 4  (* pop *)
+        ]
+    | ListAccessor (_, list, _) ->
+        inner (list, ctx) @ [ I32Load ]
   in
   let max_depth = ref (-1) in
   let body = inner (ast, { env = []; depth = -1; max_depth; params }) in

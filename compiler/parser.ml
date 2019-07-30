@@ -23,6 +23,7 @@ type expr_ast =
   | Funcall of location * string * (expr_ast list)
   | Nil of location
   | Cons of location * expr_ast * expr_ast
+  | ListAccessor of location * expr_ast * expr_ast
 
 type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
@@ -126,6 +127,7 @@ let loc_of_expr_ast = function
   | Funcall (loc, _, _) -> loc
   | Nil loc -> loc
   | Cons (loc, _, _) -> loc
+  | ListAccessor (loc, _, _) -> loc
 
 let addop =
   let
@@ -242,7 +244,24 @@ and factor2 () =
               forward
               @@ Base.List.last_exn list)))))
 
-and term () = chain (factor2 ()) mulop
+and factor3 () = Parser (function (loc, _) as input ->
+  input
+  |> parse (
+    factor2 ()
+    >>= (fun factor ->
+      option factor (
+        spaces_opt
+        >> char '.'
+        >> spaces_opt
+        >> char '('
+        >> spaces_opt
+        >> logical_expr_or ()
+        >>= (fun index_expr ->
+          char ')'
+          >> spaces_opt
+          >> return @@ ListAccessor (loc, factor, index_expr))))))
+
+and term () = chain (factor3 ()) mulop
 
 and arithmetic_expr () =
   unary <*> chain (term ()) addop
