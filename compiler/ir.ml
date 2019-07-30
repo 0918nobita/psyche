@@ -107,20 +107,10 @@ let insts_of_expr_ast ast names params =
           | None ->
               raise @@ Unbound_value (loc, ident)
         end
-    | ListLiteral (loc, exprs) ->
-        let num_exprs = List.length exprs in
-        [I32Const (4 * num_exprs); Call 1; Call 3]
-        @ List.concat (
-          exprs
-          |> List.mapi (fun i expr ->
-            [Call 5; I32Const (4 * i); I32Add]
-            @ inner (expr, ctx)
-            @ [I32Store]))
-        @ [Call 4]
-    | ListGet (loc, list_expr, index_expr) ->
-        inner (list_expr, ctx)
-        @ inner (index_expr, ctx)
-        @ [I32Const 4; I32Mul; I32Add; I32Load]
+    | Cons (loc, car, cdr) ->
+        begin
+          failwith "Not implemented"
+        end
   in
   let max_depth = ref (-1) in
   let body = inner (ast, { env = []; depth = -1; max_depth; params }) in
