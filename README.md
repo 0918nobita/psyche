@@ -4,6 +4,8 @@
 
 A WASM friendly lightweight programming language implemented in OCaml
 
+For more details about the language specification, see [wiki](https://github.com/0918nobita/psyche/wiki).
+
 ## Usage
 
 ```text
