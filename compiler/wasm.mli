@@ -15,8 +15,14 @@ type mem =
   | Mem of { limits: bool; initial: int }
   | ImportedMem of imported_mem
 
+type exported_global_var = ExportedGlobalVar of { export_name: string; code: int list }
+
+type global =
+  | Global of int list
+  | ExportedGlobal of exported_global_var
+
 type wasm = {
-  global_vars: int list list;
+  global_vars: global list;
   functions: func list;
   memories: mem list
 }

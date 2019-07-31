@@ -17,8 +17,14 @@ type mem =
   | Mem of { limits: bool; initial: int }
   | ImportedMem of imported_mem
 
+type exported_global_var = ExportedGlobalVar of { export_name: string; code: int list }
+
+type global =
+  | Global of int list
+  | ExportedGlobal of exported_global_var
+
 type wasm = {
-  global_vars: int list list;
+  global_vars: global list;
   functions: func list;
   memories: mem list
 }
@@ -135,7 +141,11 @@ let global_section global_vars =
   if List.length global_vars > 0
     then
       let body =
-        leb128_of_int (List.length global_vars) @ List.concat (List.map (fun code -> [127; 1] @ code @ [11]) global_vars)
+        leb128_of_int (List.length global_vars)
+        @ Base.List.concat_map global_vars
+          (function
+            Global code | ExportedGlobal (ExportedGlobalVar { code }) ->
+                [127; 1] @ code @ [11])
       in
       6 :: leb128_of_int (List.length body) @ body
     else []
@@ -148,7 +158,15 @@ let exports_of_functions =
       | ExportedFunc decl -> (!index, decl) :: exports
       | _ -> exports) []
 
-let export_section functions =
+let exports_of_global_vars =
+  let index = ref (-1) in
+  List.fold_left (fun exports ->
+    index := !index + 1;
+    function
+      | ExportedGlobal var -> (!index, var) :: exports
+      | _ -> exports) []
+
+let export_section functions global_vars =
   let exported_functions =
     exports_of_functions functions
     |> List.map (fun (index, { export_name }) ->
@@ -157,11 +175,23 @@ let export_section functions =
       @ 0 (* export kind *)
       :: [index (* export func index *)])
   in
-  if List.length exported_functions = 0
+  let exported_global_vars =
+    exports_of_global_vars global_vars
+    |> List.map (fun (index, ExportedGlobalVar { export_name; code }) ->
+      String.length export_name (* string length *)
+      :: (List.map Base.Char.to_int @@ Base.String.to_list export_name)
+      @ 3 (* export kind *)
+      :: [index (* export global index *)])
+  in
+  let num_exports = List.length exported_functions + List.length exported_global_vars in
+  if num_exports = 0
     then []
     else
-      let num_exports = leb128_of_int @@ List.length exported_functions in
-      let body = num_exports @ List.concat exported_functions in
+      let body =
+        (leb128_of_int num_exports)
+        @ List.concat exported_functions
+        @ List.concat exported_global_vars
+      in
       7 (* section code *)
       :: List.length body (* section size *)
       :: body
@@ -204,6 +234,6 @@ let bin_of_wasm { functions; memories; global_vars } =
   @ function_section types functions
   @ memory_section memories
   @ global_section global_vars
-  @ export_section functions
+  @ export_section functions global_vars
   @ [8; 1; 0] (* start section (function index: 0) *)
   @ code_section functions

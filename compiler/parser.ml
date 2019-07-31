@@ -21,8 +21,10 @@ type expr_ast =
   | If of location * expr_ast * expr_ast * expr_ast
   | Let of location * ident * expr_ast * expr_ast
   | Funcall of location * string * (expr_ast list)
+  | Nil of location
+  | Cons of location * expr_ast * expr_ast
+  | ListAccessor of location * expr_ast * expr_ast
   | ListLiteral of location * (expr_ast list)
-  | ListGet of location * expr_ast * expr_ast
 
 type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
@@ -124,8 +126,10 @@ let loc_of_expr_ast = function
   | If (loc, _, _, _) -> loc
   | Let (loc, _, _, _) -> loc
   | Funcall (loc, _, _) -> loc
+  | Nil loc -> loc
+  | Cons (loc, _, _) -> loc
+  | ListAccessor (loc, _, _) -> loc
   | ListLiteral (loc, _) -> loc
-  | ListGet (loc, _, _) -> loc
 
 let addop =
   let
@@ -230,17 +234,34 @@ let rec factor1 () =
         >> return @@ ListLiteral (loc, ast_list))))
   in
   nat
+  <|> Parser (function (loc, _) as input -> input |> parse (token "nil" >> spaces_opt >> return @@ Nil loc))
   <|> funcall
   <|> list_literal
   <|> Parser (fun input -> input |> parse (char '(' >> logical_expr_or () >>= (fun c -> char ')' >> return c)))
   <|> if_expr
   <|> let_expr
-  <|> (identifier >>= (fun (loc, name) -> return @@ Ident (loc, name)))
+  <|> (identifier >>= (fun (loc, name) -> spaces_opt >> return @@ Ident (loc, name)))
 
-and factor2 () = Parser (function (loc, _) as input ->
+and factor2 () =
+  Parser (function (loc, _) as input ->
+    input
+    |> parse (
+      factor1 ()
+      >>= (fun head ->
+        option head
+          (some (spaces_opt >> token "::" >> spaces_opt >> factor1 ())
+          >>= (fun tail ->
+            let list = head :: tail in
+            let forward = List.rev @@ List.tl @@ List.rev list in
+            return @@ List.fold_right
+              (fun car cdr -> Cons (loc_of_expr_ast car, car, cdr))
+              forward
+              @@ Base.List.last_exn list)))))
+
+and factor3 () = Parser (function (loc, _) as input ->
   input
   |> parse (
-    factor1 ()
+    factor2 ()
     >>= (fun factor ->
       option factor (
         spaces_opt
@@ -252,9 +273,9 @@ and factor2 () = Parser (function (loc, _) as input ->
         >>= (fun index_expr ->
           char ')'
           >> spaces_opt
-          >> return @@ ListGet (loc, factor, index_expr))))))
+          >> return @@ ListAccessor (loc, factor, index_expr))))))
 
-and term () = chain (factor2 ()) mulop
+and term () = chain (factor3 ()) mulop
 
 and arithmetic_expr () =
   unary <*> chain (term ()) addop
