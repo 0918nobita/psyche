@@ -109,19 +109,21 @@ let insts_of_expr_ast ast names params =
         end
     | Nil _ -> [I32Const 0]
     | Cons (_, car, cdr) ->
-        inner (cdr, ctx) @
-        [ I32Const 8
-        ; Call 1  (* malloc *)
-        ; Call 3  (* push *)
-        ; Call 5  (* top *)
+        inner (cdr, ctx) @     (* [i32 <- cdr に書き込むアドレス *)
+        [ Call 3 (* push *)    (* [ *)
+        ; I32Const 8           (* [i32 *)
+        ; Call 1 (* malloc *)  (* [i32 *)
+        ; Call 3 (* push *)    (* [ *)
+        ; Call 5 (* top *)     (* [i32 *)
         ] @
-        inner (car, ctx) @
-        [ I32Store
-        ; Call 5  (* top *)
-        ; I32Const 4
-        ; I32Add
-        ; I32Store
-        ; Call 4  (* pop *)
+        inner (car, ctx) @     (* [i32 i32 *)
+        [ I32Store             (* [ *)
+        ; Call 5 (* top *)     (* [i32 <- 戻り値 *)
+        ; Call 4 (* pop *)     (* [i32 i32 *)
+        ; I32Const 4           (* [i32 i32 i32 *)
+        ; I32Add               (* [i32 i32 *)
+        ; Call 4 (* pop *)     (* [i32 i32 i32 *)
+        ; I32Store             (* [i32 *)
         ]
     | ListAccessor (_, list, _) ->
         inner (list, ctx) @ [ I32Load ]
