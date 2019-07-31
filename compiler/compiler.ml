@@ -104,7 +104,9 @@ let compile src =
   let out = open_out "out.wasm" in
   write out @@ bin_of_wasm
     { global_vars =
-      [ Global [65; 255; 243; 3] (* i32.const 63999 *) ]
+      [ Global [65; 255; 243; 3] (* i32.const 63999 *)
+      ; ExportedGlobal (ExportedGlobalVar { export_name = "status"; code = [65; 0] (* i32.const 0 *) })
+      ]
     ; functions = hidden_functions @ functions_of_stmts ast
     ; memories = [ Mem { limits = false; initial = 1 } ]
     };
