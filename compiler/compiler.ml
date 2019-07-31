@@ -103,7 +103,8 @@ let compile src =
   check_duplication ast;
   let out = open_out "out.wasm" in
   write out @@ bin_of_wasm
-    { global_vars = [[65; 255; 243; 3] (* i32.const 63999 *) ]
+    { global_vars =
+      [ Global [65; 255; 243; 3] (* i32.const 63999 *) ]
     ; functions = hidden_functions @ functions_of_stmts ast
     ; memories = [ Mem { limits = false; initial = 1 } ]
     };
