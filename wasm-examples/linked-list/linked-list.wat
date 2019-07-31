@@ -5,17 +5,13 @@
   ;; 1: List index out of bounds
   (global $status (export "status") (mut i32) (i32.const 0))
 
-  (func $panic (param i32)
-    (set_global $status (get_local 0))
-    (unreachable))
-
   (func $nth (param $head i32) (param $index i32) (result i32)
     (if (i32.gt_s (i32.const 0) (get_local $index))
-      (call $panic (i32.const 1)))
+      (then (set_global $status (get_local 1)) unreachable))
     (if (i32.ne (get_local $index) (i32.const 0))
       (loop
         (if (i32.eqz (i32.load (i32.add (get_local $head) (i32.const 4))))
-          (call $panic (i32.const 1)))
+          (then (set_global $status (get_local 0)) unreachable))
         (set_local $head (i32.load (i32.add (get_local $head) (i32.const 4))))
         (set_local $index (i32.sub (get_local $index) (i32.const 1)))
         (br_if 0 (i32.gt_s (get_local $index) (i32.const 0)))))
