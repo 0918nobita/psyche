@@ -1,4 +1,4 @@
-type bit = Zero | One
+type bit
 
 type bin = bit list
 
