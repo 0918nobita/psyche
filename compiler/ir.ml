@@ -89,7 +89,7 @@ let insts_of_expr_ast ast names params =
         in
           if List.length addrs = 0  (* let 束縛されていない場合、引数に含まれていないか確認する *)
             then (
-              match Base.List.findi (params |> List.map snd) (fun _ -> (=) name) with
+              match Base.List.findi (params |> List.map snd) ~f:(fun _ -> (=) name) with
                 | Some (index, _) ->
                     [GetLocal index]
                 | None ->
@@ -101,9 +101,9 @@ let insts_of_expr_ast ast names params =
                 else
                   [Call 5; I32Const (List.hd addrs * 4);  I32Add; I32Load]
     | Funcall (loc, ident, asts) ->
-        begin match Base.List.findi names (fun _ -> (=) ident) with
+        begin match Base.List.findi names ~f:(fun _ -> (=) ident) with
           | Some (index, _) ->
-              Base.List.concat_map asts (fun ast -> inner (ast, ctx)) @ [Call (index + 7)]
+              Base.List.concat_map asts ~f:(fun ast -> inner (ast, ctx)) @ [Call (index + 7)]
           | None ->
               raise @@ Unbound_value (loc, ident)
         end

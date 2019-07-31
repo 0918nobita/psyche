@@ -2,9 +2,9 @@ open Binary
 
 type func_sig = { params: int; results: int }
 
-type imported_func = { import_name: string * string; signature: func_sig }
+type imported_func = { import_name: string * string; imp_signature: func_sig }
 
-type exported_func = { export_name: string; signature: func_sig; locals: int; code: int list }
+type exported_func = { export_name: string; exp_signature: func_sig; locals: int; code: int list }
 
 type func =
   | ImportedFunc of imported_func
@@ -30,9 +30,9 @@ type wasm = {
 }
 
 let sig_of_func = function
-  | ImportedFunc { signature } -> signature
-  | Func { signature } -> signature
-  | ExportedFunc { signature } -> signature
+  | ImportedFunc { imp_signature; import_name = _ } -> imp_signature
+  | Func { signature; locals = _; code = _ } -> signature
+  | ExportedFunc { exp_signature; export_name = _; locals = _; code = _ } -> exp_signature
 
 let types_of_functions =
   let collect table func =
@@ -43,18 +43,18 @@ let types_of_functions =
 
 let header = to_uint32 1836278016 @ to_uint32 1
 
-let type_section types functions =
+let type_section types =
   if List.length types = 0
     then []
     else
       let num_types = leb128_of_int @@ List.length types in
       let type_decls =
-        Base.List.concat_map types (fun { params; results } ->
+        Base.List.concat_map types ~f:(fun { params; results } ->
           96 (* func *)
           :: params (* num params *)
-          :: Base.List.init params (fun _ -> 127) (* i32 *)
+          :: Base.List.init params ~f:(fun _ -> 127) (* i32 *)
           @ results (* num results *)
-          :: Base.List.init results (fun _ -> 127) (* i32 *))
+          :: Base.List.init results ~f:(fun _ -> 127) (* i32 *))
       in
       1 (* section code *)
       :: leb128_of_int (List.length num_types + List.length type_decls) (* section size *)
@@ -63,11 +63,11 @@ let type_section types functions =
 
 let imports_of_functions = List.fold_left (fun imports -> function
   | ImportedFunc decl -> decl :: imports
-  | _ -> imports) []
+  | Func _ | ExportedFunc _ -> imports) []
 
 let imports_of_memories = List.fold_left (fun imports -> function
   | ImportedMem decl -> decl :: imports
-  | _ -> imports) []
+  | Mem _ -> imports) []
 
 let chars_of_string str = List.map Base.Char.to_int @@ Base.String.to_list str
 
@@ -78,13 +78,13 @@ let unwrap = function
 let import_section types functions memories =
   let imported_functions =
     imports_of_functions functions
-    |> List.map (fun { import_name; signature } ->
+    |> List.map (fun { import_name; imp_signature } ->
       (String.length @@ fst import_name)
       :: (chars_of_string (fst import_name))
       @ (String.length @@ snd import_name)
       :: (chars_of_string (snd import_name))
       @ 0 (* import kind *)
-      :: leb128_of_int (fst @@ unwrap @@ Base.List.findi types (fun _ -> (=) signature)))
+      :: leb128_of_int (fst @@ unwrap @@ Base.List.findi types ~f:(fun _ -> (=) imp_signature)))
   in
   let imported_memories =
     imports_of_memories memories
@@ -115,7 +115,7 @@ let function_section types functions =
         leb128_of_int (List.length functions) (* num functions *)
         @
         (functions
-        |> List.map (fun f -> fst @@ unwrap @@ Base.List.findi types (fun _ -> (=) (sig_of_func f)))) (* function n signature index *)
+        |> List.map (fun f -> fst @@ unwrap @@ Base.List.findi types ~f:(fun _ -> (=) (sig_of_func f)))) (* function n signature index *)
       in
       3 (* section code *)
       :: leb128_of_int (List.length body) (* section size *)
@@ -128,7 +128,7 @@ let memory_section memories =
       let body =
         leb128_of_int (List.length memories) (* num memories *)
         @
-        (Base.List.concat_map memories (function
+        (Base.List.concat_map memories ~f:(function
           | ImportedMem { module_name = _; limits; initial }
           | Mem { limits; initial } ->
               [if limits then 1 else 0; initial]))
@@ -143,8 +143,8 @@ let global_section global_vars =
       let body =
         leb128_of_int (List.length global_vars)
         @ Base.List.concat_map global_vars
-          (function
-            Global code | ExportedGlobal (ExportedGlobalVar { code }) ->
+          ~f:(function
+            Global code | ExportedGlobal (ExportedGlobalVar { code; export_name = _ }) ->
                 [127; 1] @ code @ [11])
       in
       6 :: leb128_of_int (List.length body) @ body
@@ -156,7 +156,7 @@ let exports_of_functions =
     index := !index + 1;
     function
       | ExportedFunc decl -> (!index, decl) :: exports
-      | _ -> exports) []
+      | Func _ | ImportedFunc _ -> exports) []
 
 let exports_of_global_vars =
   let index = ref (-1) in
@@ -164,12 +164,12 @@ let exports_of_global_vars =
     index := !index + 1;
     function
       | ExportedGlobal var -> (!index, var) :: exports
-      | _ -> exports) []
+      | Global _ -> exports) []
 
 let export_section functions global_vars =
   let exported_functions =
     exports_of_functions functions
-    |> List.map (fun (index, { export_name }) ->
+    |> List.map (fun (index, { export_name; exp_signature = _; locals = _; code = _ }) ->
       String.length export_name (* string length *)
       :: (List.map Base.Char.to_int @@ Base.String.to_list export_name)
       @ 0 (* export kind *)
@@ -177,7 +177,7 @@ let export_section functions global_vars =
   in
   let exported_global_vars =
     exports_of_global_vars global_vars
-    |> List.map (fun (index, ExportedGlobalVar { export_name; code }) ->
+    |> List.map (fun (index, ExportedGlobalVar { export_name; code = _ }) ->
       String.length export_name (* string length *)
       :: (List.map Base.Char.to_int @@ Base.String.to_list export_name)
       @ 3 (* export kind *)
@@ -205,9 +205,10 @@ let code_section functions =
     else
       let body =
         leb128_of_int num_functions @
-        (Base.List.concat_map functions (function
+        (Base.List.concat_map functions ~f:(function
           | ImportedFunc _ -> []
-          | ExportedFunc { locals; code } | Func { locals; code } ->
+          | ExportedFunc { locals; code; exp_signature = _; export_name = _ }
+          | Func { locals; code; signature = _ } ->
               if locals = 0
                 then
                   (leb128_of_int @@ List.length code + 2) (* func body size *)
@@ -229,7 +230,7 @@ let code_section functions =
 let bin_of_wasm { functions; memories; global_vars } =
   let types = types_of_functions functions in
   header
-  @ type_section types functions
+  @ type_section types
   @ import_section types functions memories
   @ function_section types functions
   @ memory_section memories

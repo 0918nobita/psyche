@@ -1,6 +1,5 @@
 open Parser_combinator
 open Parser
-open Binary
 open Ir
 open Wasm
 
@@ -24,7 +23,7 @@ let adjust_size size bytes =
       then bytes
       else
         if lack > 0
-          then bytes @ Base.List.init lack (fun _ -> 0)
+          then bytes @ Base.List.init lack ~f:(fun _ -> 0)
           else failwith "(adjust_arr_length) Invalid format"
 
 exception Duplicate_func of location
@@ -92,7 +91,7 @@ let functions_of_stmts stmts =
         then
           ExportedFunc
             { export_name = snd ident
-            ; signature = { params = List.length args; results = 1 }
+            ; exp_signature = { params = List.length args; results = 1 }
             ; locals = !max + 1 + List.length args
             ; code
             }

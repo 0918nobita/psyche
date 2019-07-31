@@ -41,7 +41,7 @@ let ( <$> ) f p = Parser (fun input ->
 
 let ( <*> ) precede succeed =
   Parser (fun input ->
-    Base.List.concat_map (parse precede input) (function { ast = f; loc = precede_loc; rest } ->
+    Base.List.concat_map (parse precede input) ~f:(function { ast = f; loc = precede_loc; rest } ->
       parse succeed (precede_loc, rest)
       |> List.map (fun result -> { result with ast = f result.ast })))
 
@@ -49,7 +49,7 @@ let return ast = Parser (fun (loc, rest) -> [{ ast; loc; rest }])
 
 let ( >>= ) p f =
   Parser (fun input ->
-    Base.List.concat_map (parse p input) (function { ast; loc; rest } ->
+    Base.List.concat_map (parse p input) ~f:(function { ast; loc; rest } ->
       parse (f ast) (loc, rest)))
 
 let ( >> ) m f = m >>= fun _ -> f

@@ -243,7 +243,7 @@ let rec factor1 () =
   <|> (identifier >>= (fun (loc, name) -> spaces_opt >> return @@ Ident (loc, name)))
 
 and factor2 () =
-  Parser (function (loc, _) as input ->
+  Parser (function (_, _) as input ->
     input
     |> parse (
       factor1 ()

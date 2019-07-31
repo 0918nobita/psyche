@@ -77,7 +77,7 @@ let adjust_arr_length arr size fill =
       then arr
       else
         if lack > 0
-          then Base.List.init lack (fun _ -> fill) @ arr
+          then Base.List.init lack ~f:(fun _ -> fill) @ arr
           else failwith "(adjust_arr_length) Invalid format"
 
 let signed_bin_of_int n =
