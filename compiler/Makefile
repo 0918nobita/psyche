@@ -5,7 +5,7 @@ ML_FILES := parser_combinator.ml parser.ml binary.ml ir.ml wasm.ml compiler.ml
 build:
 	mkdir -p _build
 	ocamlopt -c $(MLI_FILES)
-	ocamlfind ocamlopt -o _build/psyche -linkpkg -package base $(ML_FILES)
+	ocamlfind ocamlopt -o _build/psyche -linkpkg -package base -w +a $(ML_FILES)
 	rm -f *.cmx *.o
 
 for-toplevel:
