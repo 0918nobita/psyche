@@ -24,6 +24,7 @@ type expr_ast =
   | Nil of location
   | Cons of location * expr_ast * expr_ast
   | ListAccessor of location * expr_ast * expr_ast
+  | ListLiteral of location * (expr_ast list)
 
 type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
