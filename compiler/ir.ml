@@ -103,7 +103,7 @@ let insts_of_expr_ast ast names params =
     | Funcall (loc, ident, asts) ->
         begin match Base.List.findi names (fun _ -> (=) ident) with
           | Some (index, _) ->
-              Base.List.concat_map asts (fun ast -> inner (ast, ctx)) @ [Call (index + 6)]
+              Base.List.concat_map asts (fun ast -> inner (ast, ctx)) @ [Call (index + 7)]
           | None ->
               raise @@ Unbound_value (loc, ident)
         end
@@ -125,8 +125,10 @@ let insts_of_expr_ast ast names params =
         ; Call 4 (* pop *)     (* [i32 i32 i32 *)
         ; I32Store             (* [i32 *)
         ]
-    | ListAccessor (_, list, _) ->
-        inner (list, ctx) @ [ I32Load ]
+    | ListAccessor (_, list, index) ->
+        inner (list, ctx) @
+        inner (index, ctx) @
+        [ Call 6 (* nth *) ]
   in
   let max_depth = ref (-1) in
   let body = inner (ast, { env = []; depth = -1; max_depth; params }) in
