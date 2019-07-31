@@ -30,4 +30,6 @@ type stmt_ast = FuncDef of location * bool * ident * (ident list) * expr_ast
 
 exception Syntax_error of location
 
+val loc_of_expr_ast : expr_ast -> location
+
 val program : string -> stmt_ast list

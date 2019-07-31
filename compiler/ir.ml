@@ -129,6 +129,13 @@ let insts_of_expr_ast ast names params =
         inner (list, ctx) @
         inner (index, ctx) @
         [ Call 6 (* nth *) ]
+    | ListLiteral (loc, list) ->
+        if List.length list = 0
+          then
+            inner (Nil loc, ctx)
+          else
+            inner (List.fold_right (fun car cdr ->
+              Cons (loc_of_expr_ast car, car, cdr)) list (Nil loc), ctx)
   in
   let max_depth = ref (-1) in
   let body = inner (ast, { env = []; depth = -1; max_depth; params }) in
