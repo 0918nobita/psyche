@@ -122,3 +122,8 @@ program = { func_def }
 
 - [WebAssembly Specification](https://webassembly.github.io/spec/core/index.html)
 - [WebAssembly Reference Manual](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md)
+
+
+## License
+
+This software is released under the MIT License, see LICENSE.
