@@ -1,10 +1,12 @@
 # Psyche
 
-[![CircleCI](https://circleci.com/gh/0918nobita/psyche.svg?style=svg)](https://circleci.com/gh/0918nobita/psyche)  [![OPAM](https://img.shields.io/badge/OPAM-v0.0.1-orange)](https://opam.ocaml.org/packages/psyche/)
+[![CircleCI](https://circleci.com/gh/0918nobita/psyche.svg?style=svg)](https://circleci.com/gh/0918nobita/psyche)  [![OPAM](https://img.shields.io/badge/OPAM-v0.0.1-orange)](https://opam.ocaml.org/packages/psyche/)  [![Twitter](https://img.shields.io/badge/Twitter-%40psychelang-blue)](https://twitter.com/psychelang)
 
 A WASM friendly lightweight programming language implemented in OCaml
 
 For more details about the language specification, see [wiki](https://github.com/0918nobita/psyche/wiki).
+
+Made with ❤️ in Japan
 
 ## Usage
 
