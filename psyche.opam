@@ -9,6 +9,7 @@ authors: [
 homepage: "https://github.com/0918nobita/psyche"
 dev-repo: "git+https://github.com/0918nobita/psyche.git"
 bug-reports: "https://github.com/0918nobita/psyche/issues"
+license: "MIT"
 build: [
   [make]
 ]
