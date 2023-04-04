@@ -1,6 +1,6 @@
 # Psyche
 
-[![OPAM](https://img.shields.io/badge/OPAM-v0.0.1-orange)](https://opam.ocaml.org/packages/psyche/) 
+[![OPAM](https://img.shields.io/badge/OPAM-v0.0.1-orange)](https://opam.ocaml.org/packages/psyche/)
 
 A WASM friendly lightweight programming language implemented in OCaml
 
@@ -42,34 +42,6 @@ In order to install or to build the Psyche compiler, ensure that you have OPAM i
 
 ```
 opam install psyche
-```
-
-## Building
-
-Clone a copy of the repo :
-
-```bash
-git clone https://github.com/0918nobita/psyche
-```
-
-Install dev dependencies :
-
-```bash
-opam install . --deps-only
-```
-
-Build the compiler :
-
-```bash
-make  # produces compiler/_build/psyche (executable file)
-```
-
-## Testing
-
-In order to run tests, ensure that you have [WABT](https://github.com/WebAssembly/wabt) installed.
-
-```bash
-make test
 ```
 
 ## EBNF
