@@ -1,0 +1,4 @@
+(executable
+  (public_name psyche)
+  (name psyche)
+  (libraries psyche_lib))

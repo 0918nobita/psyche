@@ -2,3 +2,5 @@
 *.wasm
 *.cmi
 *.cmx
+
+_build/

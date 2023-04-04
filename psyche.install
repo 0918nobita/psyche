@@ -1,6 +1,0 @@
-bin: [
-  "compiler/_build/psyche" {"psyche"}
-]
-man: [
-  "man/psyche.1" {"man1/psyche.1"}
-]
